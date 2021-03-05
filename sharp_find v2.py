@@ -2,7 +2,7 @@ import binance2 as bs
 import datetime
 import pandas as pd
 
-def fun_sharp_(table_data):
+def sharp_table_updater(table_data):
     standart_dohodn=4
     number_of_day=len(table_data)
 
@@ -18,17 +18,11 @@ def fun_sharp_(table_data):
     print (f"коэффициент Шарпа {sharp}")
     return (sharp)
 
-def fun_sortino_(table_data):
+def sortino_table(table_data):
     standart_dohodn = 4
     number_of_day = len(table_data)
     table_data = table_data[(table_data['free']) > 0]
     Rf=standart_dohodn/365*number_of_day# доходность дневная без рисковая
-
-    Candle_close=table_data["Close"]
-    #iat
-    table_data["Доходность"]=Candle_close.diff()/Candle_close.shift(-1)
-    srednee_znac_dohodn=table_data["Доходность"].mean()
-
 
     standart_dev = table_data["Доходность"].std()  # Стандартное отклонение
 
@@ -36,8 +30,7 @@ def fun_sortino_(table_data):
 
     print (table_data)
     profitability = difference.mean()# Среднеее значение по разности доходности для знаменателя
-    sortino= (srednee_znac_dohodn - Rf)/profitability**1/2
-    return sortino
+
 
 
 
@@ -81,10 +74,10 @@ def take_data_candle(asset):
             table_data["Close"]=table_data["Close"].apply(lambda x:float(x))
             print(table_data)
 
-            sharp=fun_sharp_(table_data)# Запуск функции пересчета Шарпа
+            sharp=sharp_table_updater(table_data)# Запуск функции пересчета Шарпа
             return sharp
     except:
-        return None#rg
+        return None
 
 
 if __name__ == '__main__':
@@ -93,8 +86,6 @@ if __name__ == '__main__':
     take_data_candle(bs.table_base)
 
     bs.table_base["Sharp"]=bs.table_base["asset"].apply(lambda x: take_data_candle(x))# Инициализация функции поиска
-    #bs.table_base["Sortino"] = bs.table_base["asset"].apply(lambda x: take_data_candle(x))  # Инициализация функции поиска
-
     bs.table_base=bs.table_base.dropna(subset=["Sharp"])
     print("-"*10)
     print(bs.table_base)
