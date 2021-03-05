@@ -1,5 +1,2 @@
-converter = (lambda x : x*2 if x < 11 else ())
-
-
-print(converter(5))
-print(converter(24))
+a=[1,2,3,4,5,6,7,8]
+print(a[-3::1])
