@@ -1,3 +1,7 @@
+# Программа находит коэффцииент шарпа и сортино одновременно
+
+
+
 import binance
 import pandas as pd
 import pandas_datareader as pdr
@@ -107,13 +111,7 @@ def resul_plot():
 
 
 
-def koeff_sharp(x):
-    #S=E*(doxod_R(x))-R_f)/fun_G(x)
-    S=(avgR(x)-avgRf)/fun_G(x)
-    return S
-
-
-''''''''''
+'''''''''
     for i in range (0,len(table_data["Open time"])-1):
         table_data["Доходность"]=table_data[i]
 '''''''''
@@ -126,14 +124,6 @@ def grapf(a):
                     low=a.day_set['Low'],
                     close=a.day_set['Close'])])
     fig.show()
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
