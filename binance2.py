@@ -105,10 +105,11 @@ def resul_plot():
 
         print(table)
         stoimost={"Стоимост активов $":sum_cost + volume_usdt}
+        print("\n"*2)
         print(f"Стоимость активов в долларах={sum_cost + volume_usdt}\n"
               f"Стоимость активов в рублях {(sum_cost + volume_usdt) * usd_rub}\n"
               f"Наличные доллары$ {volume_usdt}")
-
+        print("\n"*2)
 
 
 '''''''''
