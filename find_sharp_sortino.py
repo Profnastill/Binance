@@ -23,12 +23,12 @@ def fun_sharp_(table_data):
 def fun_sortino_(table_data):
     standart_dohodn = 4
     number_of_day = len(table_data)
-    table_data = table_data[(table_data['Close']) > 0]
+    #table_data = table_data[(table_data['Close']) > 0]# Сомнительная строка !!!!! Так как доходность и так всегда больше нуля
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
 
     Candle_close = table_data["Close"]
     # iat
-    table_data["Доходность сортино"] = Candle_close.diff() / Candle_close.shift(-1)
+    table_data["Доходность сортино"] = Candle_close.diff() / Candle_close.shift(-1)# Нахождение разницы в процентах
     srednee_znac_dohodn = table_data["Доходность сортино"].mean()
 
     standart_dev = table_data["Доходность сортино"].std()  # Стандартное отклонение
@@ -63,7 +63,7 @@ def take_data_candle(asset):
     # print (symbol)
     interval = '1d'
     # start_str=datetime.datetime(2021,1,1)
-    time_delta = datetime.timedelta(10)  # Интервал вычесления в днях
+    time_delta = datetime.timedelta(14)  # Интервал вычесления в днях
     time_delta = time_delta.total_seconds()
     print(bs.current_time, time_delta)
     start_str = bs.current_time['serverTime'] / 1000 - time_delta
@@ -74,35 +74,30 @@ def take_data_candle(asset):
     try:
         data = bs.client.get_historical_klines(asset + "USDT", interval, str(start_str), end_str=None, limit=500)
     except:
-        data = None
-    print(data)
-    if data != None:
-        table_data = pd.DataFrame(data, columns=["Open time", "Open", "High", "Low", "Close", "Volume",
-                                                 "Close time", "Quote asset volume", "Number of trades",
-                                                 "Taker buy base asset volume",
-                                                 "Taker buy quote asset volume", "Can be ignored"])
-        print(table_data)
-        print(table_data, int(len(table_data)))
-        table_data["Close"] = table_data["Close"].apply(lambda x: float(x))
-
-
-
-        print("Шарп")
-        sharpa = fun_sharp_(table_data)
-        print("Сортино")
-        sortino = fun_sortino_(table_data)  # Запуск функции пересчета Шарпа
-
-
-        print (table_data)
-        print(f"Коэффициент {sharpa},Коэффициент Сортино {sortino}")
-        return pd.Series([sharpa,sortino])
-    else:
         return pd.Series([None,None])
 
 
+    table_data = pd.DataFrame(data, columns=["Open time", "Open", "High", "Low", "Close", "Volume",
+                                             "Close time", "Quote asset volume", "Number of trades",
+                                             "Taker buy base asset volume",
+                                             "Taker buy quote asset volume", "Can be ignored"])
+    print(table_data)
+    print(table_data, int(len(table_data)))
+    table_data["Close"] = table_data["Close"].apply(lambda x: float(x))
+
+    sharpa = fun_sharp_(table_data)
+    sortino = fun_sortino_(table_data)  # Запуск функции пересчета Шарпа
+
+
+    print (table_data)
+    print(f"Коэффициент {sharpa},Коэффициент Сортино {sortino}")
+    return pd.Series([sharpa,sortino])
+
+
+
 if __name__ == '__main__':
-    bs.table_base=bs.table_base[7:10]
-    #bs.table_base = bs.table  # Если надо найти по портфелю Шарпа включить эту строку.
+    #bs.table_base=bs.table_base
+    bs.table_base = bs.table  # Если надо найти по портфелю Шарпа включить эту строку.
     # print( bs.table)
     take_data_candle(bs.table_base)
 
