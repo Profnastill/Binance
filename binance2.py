@@ -1,5 +1,5 @@
 # Программа находит коэффцииент шарпа и сортино одновременно
-
+import keys
 
 
 import binance
@@ -25,8 +25,8 @@ urllib3.disable_warnings()
 
 
 #API_key = "New_key"
-API_key = "xY9wlXlxoP27hZHUN7KAqYpLzDXvCmYmNKs4AGwehHFUAI1Jz4yrWRQxWiC9Gzp8"
-API_Secret = "6ZEuiRDt1HTkXsA36JF2D6EmFzzoKglmg6zWbsf7cuGSjaiBdtE1PNav5XS8RlLq"
+API_key = keys.API_key
+API_Secret = keys.API_Secret
 
 converter = lambda x : x*2 if x < 11 else (x*3 if x < 22 else x)
 
