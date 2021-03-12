@@ -141,14 +141,13 @@ def take_data_candle(asset, daily_interval):
                                              "Close time", "Quote asset volume", "Number of trades",
                                              "Taker buy base asset volume",
                                              "Taker buy quote asset volume", "Can be ignored"])
-    print(table_data)
-    print(table_data, int(len(table_data)))
-    table_data["Close"] = table_data["Close"].apply(lambda x: float(x))
+
+
+    table_data = table_data[["Open","Close","High","Low"]].applymap(lambda x: float(x))
+
 
     sharpa = fun_sharp_(table_data)
     sortino = fun_sortino_(table_data)  # Запуск функции пересчета Шарпа
-
-    print(table_data)
     print(f"Коэффициент {sharpa},Коэффициент Сортино 0{sortino}")
     return pd.Series([sharpa, sortino])
 
@@ -192,7 +191,7 @@ def test(data):
 
 if __name__ == '__main__':
     bs.table_base = ask_input()
-    bs.table_base=bs.table_base.loc[1:2]
+    #bs.table_base=bs.table_base.loc[1:2]
     #test(bs.table_base)
     # bs.table_base = bs.table  # Если надо найти по портфелю Шарпа включить эту строку.
     # print( bs.table)
