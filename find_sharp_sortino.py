@@ -8,22 +8,17 @@ import datetime
 
 
 def fun_atr(table_data):
-
     '''Скользящее среднее'''
     Candle_close = table_data["Close"]
-    Candle_hight=table_data["High"]
+    Candle_hight = table_data["High"]
     Candle_low = table_data["Low"]
-    table_data["raznost1"]=Candle_hight-Candle_low
+    table_data["raznost1"] = Candle_hight - Candle_low
 
-    print (table_data)
-    table_data["raznost2"]=abs(Candle_hight-Candle_close.shift(-1))
-    table_data["raznost3"]=abs(Candle_low-Candle_close.shift(-1))
-    table_data['atr']=table_data[["raznost1","raznost2","raznost2"]].max(axis=1)
-    atr=table_data["atr"].sum()
+    table_data["raznost2"] = abs(Candle_hight - Candle_close.shift(-1))
+    table_data["raznost3"] = abs(Candle_low - Candle_close.shift(-1))
+    table_data['atr'] = table_data[["raznost1", "raznost2", "raznost2"]].max(axis=1)
+    atr = table_data["atr"].sum()
 
-
-    print ("-"*30)
-    print (table_data)
     return atr
 
 
@@ -31,7 +26,7 @@ def fun_atr(table_data):
 
 
 def fun_sharp_(table_data):
-    atr=fun_atr(table_data)# Нахождение скользящего среднего
+    atr = fun_atr(table_data)  # Нахождение скользящего среднего
 
     standart_dohodn = 0
     number_of_day = len(table_data)
@@ -43,7 +38,7 @@ def fun_sharp_(table_data):
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
     standart_dev = table_data["Доходность шарп"].std()  # Стандартное отклонение
 
-    #sharp = (srednee_znac_dohodn - Rf) / standart_dev * (52 ** (1 / 2))  # Через стандартное отклонение
+    # sharp = (srednee_znac_dohodn - Rf) / standart_dev * (52 ** (1 / 2))  # Через стандартное отклонение
     sharp = (srednee_znac_dohodn - Rf) / atr
 
     # print(table_data)
@@ -80,30 +75,28 @@ class Candle_class:
         self.candle_hight = table_data["High"]
         self.candle_low = table_data["Low"]
         self.candle_close = table_data["Close"]
-        self.candle_model["свеча"]=table_data
+        self.candle_model["свеча"] = table_data
 
     def candel_classificator(self):
         '''Определяет тип свечей'''
         pogreshost = 0.5
         candel_scope = self.candle_low - self.candle_hight  # Размах свечи
         candel_size = math.fabs(self.candle_open - self.candle_close)  # Тело свечи
-        candel_relation=candel_size/self.candle_close#Отношение цены открытия к цене закрытия
+        candel_relation = candel_size / self.candle_close  # Отношение цены открытия к цене закрытия
         bottomShadow = min(self.candle_open, self.candle_close) - self.candle_low  # Нижняя тень  размер
         topShadow = self.candle_hight - max(self.candle_open, self.candle_close)  # Верхняя тень
 
-        if bottomShadow > candel_size*2 and topShadow <0.1* candel_scope:
-            self.candle_type="Молот"
-        elif topShadow >candel_size*2 and bottomShadow<0.1*candel_scope:
-            self.candle_type="Такури"#Зонтик висильник
-        elif candel_size< 0.1*candel_scope and candel_relation <0.005:# вопросик по поводу диапазона
+        if bottomShadow > candel_size * 2 and topShadow < 0.1 * candel_scope:
+            self.candle_type = "Молот"
+        elif topShadow > candel_size * 2 and bottomShadow < 0.1 * candel_scope:
+            self.candle_type = "Такури"  # Зонтик висильник
+        elif candel_size < 0.1 * candel_scope and candel_relation < 0.005:  # вопросик по поводу диапазона
             self.candle_type = "Додзи"
-        elif bottomShadow < topShadow * 4 and candel_relation<0.005:
-            self.candle_type="стрекоза"
-        elif (candel_scope-candel_size)/candel_scope<0.02:
-            self.candle_type="Белый больш свеча"
+        elif bottomShadow < topShadow * 4 and candel_relation < 0.005:
+            self.candle_type = "стрекоза"
+        elif (candel_scope - candel_size) / candel_scope < 0.02:
+            self.candle_type = "Белый больш свеча"
         return self.candle_type
-
-
 
 
 def take_data_candle(asset, daily_interval):
@@ -138,33 +131,33 @@ def take_data_candle(asset, daily_interval):
     try:
         data = bs.client.get_historical_klines(asset + "USDT", interval, str(start_str), end_str=None, limit=500)
     except:
-        return pd.DataFrame([[None,None,None,None]],columns=["Open","Close","High","Low"])
+        return pd.DataFrame([[None, None, None, None]], columns=["Open", "Close", "High", "Low"])
 
     table_data = pd.DataFrame(data, columns=["Open time", "Open", "High", "Low", "Close", "Volume",
                                              "Close time", "Quote asset volume", "Number of trades",
                                              "Taker buy base asset volume",
                                              "Taker buy quote asset volume", "Can be ignored"])
 
-
-    table_data = table_data[["Open","Close","High","Low"]].applymap(lambda x: float(x))
+    table_data = table_data[["Open", "Close", "High", "Low"]].applymap(lambda x: float(x))
     print(table_data)
     return table_data
+
 
 def find_sharp_sortino(asset, daily_interval):
     '''Функция запуска Шарпа и Сортино и объединения функций'''
 
-    table_data=take_data_candle(asset,daily_interval)
+    table_data = take_data_candle(asset, daily_interval)
     print(table_data)
     sharpa = fun_sharp_(table_data)
     sortino = fun_sortino_(table_data)  # Запуск функции пересчета Шарпа
-    #atr = fun_atr(table_data)# Значение скольязящего среднего может потом пригодится
+    # atr = fun_atr(table_data)# Значение скольязящего среднего может потом пригодится
     print(f"Коэффициент {sharpa},Коэффициент Сортино 0{sortino}")
     return pd.Series([sharpa, sortino])
 
-def candel_classificator(table_data,daily_interval):
-    '''Определяет тип свечей'''
-    table_data=take_data_candle(table_data,daily_interval)#Запускаем поиск свечей в интервале.
 
+def candel_classificator(table_data, daily_interval):
+    '''Определяет тип свечей'''
+    table_data = take_data_candle(table_data, daily_interval)  # Запускаем поиск свечей в интервале.
 
     candle_open = table_data["Open"]
     candle_hight = table_data["High"]
@@ -174,58 +167,58 @@ def candel_classificator(table_data,daily_interval):
     pogreshost = 0.5
     candel_scope = candle_low - candle_hight  # Размах свечи
     candel_size = math.fabs(candle_open - candle_close)  # Тело свечи
-    candel_relation=candel_size/candle_close#Отношение цены открытия к цене закрытия
+    candel_relation = candel_size / candle_close  # Отношение цены открытия к цене закрытия
     bottomShadow = min(candle_open, candle_close) - candle_low  # Нижняя тень  размер
     topShadow = candle_hight - max(candle_open, candle_close)  # Верхняя тень
 
-    if bottomShadow > candel_size*2 and topShadow <0.1* candel_scope:
-        candle_type="Молот"
-    elif topShadow >candel_size*2 and bottomShadow<0.1*candel_scope:
-        candle_type="Такури"#Зонтик висильник
-    elif candel_size< 0.1*candel_scope and candel_relation <0.005:# вопросик по поводу диапазона
+    if bottomShadow > candel_size * 2 and topShadow < 0.1 * candel_scope:
+        candle_type = "Молот"
+    elif topShadow > candel_size * 2 and bottomShadow < 0.1 * candel_scope:
+        candle_type = "Такури"  # Зонтик висильник
+    elif candel_size < 0.1 * candel_scope and candel_relation < 0.005:  # вопросик по поводу диапазона
         candle_type = "Додзи"
-    elif bottomShadow < topShadow * 4 and candel_relation<0.005:
-        candle_type="стрекоза"
-    elif (candel_scope-candel_size)/candel_scope<0.02:
-        candle_type="Белый больш свеча"
+    elif bottomShadow < topShadow * 4 and candel_relation < 0.005:
+        candle_type = "стрекоза"
+    elif (candel_scope - candel_size) / candel_scope < 0.02:
+        candle_type = "Белый больш свеча"
     return candle_type
+
 
 def ask_input():
     'Функция ввода данных'
     try:
-        a=int(input("Введите по какой таблице искать по портфелю 1 или по рынку 0 "))
+        a = int(input("Введите по какой таблице искать по портфелю 1 или по рынку 0 "))
     except:
         "Ввели не числовые данные"
         ask_input()
-    if a==1:
+    if a == 1:
         bs.table_base = bs.table
         return bs.table_base
     else:
         bs.table_base = bs.table_base
+
         return bs.table_base
+
 
 def insert_excel(table):
     '''Функция для вставки в excel'''
-    a=int(input("Введите нужен ли импорт в excel Yes=1 "))
-    if a==1:
-        date=str(datetime.date.today())
-        xlbook=xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
+    a = int(input("Введите нужен ли импорт в excel Yes=1 "))
+    if a == 1:
+        date = str(datetime.date.today())
+        xlbook = xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
         try:
-            xlsheet=xlbook.sheets.add(name=date)
+            xlsheet = xlbook.sheets.add(name=date)
         except:
-            xlsheet=xlbook.sheets(date)
+            xlsheet = xlbook.sheets(date)
 
-        xlsheet.range("A1").options(index=False).value=table
-
-
-
-
+        xlsheet.range("A1").options(index=False).value = table
 
 
 if __name__ == '__main__':
     bs.table_base = ask_input()
-    #bs.table_base=bs.table_base.loc[1:4]
-    #test(bs.table_base)
+    print(bs.table_base)
+    # bs.table_base=bs.table_base.loc[1:4]
+    # test(bs.table_base)
     # bs.table_base = bs.table  # Если надо найти по портфелю Шарпа включить эту строку.
     # print( bs.table)
     # take_data_candle(bs.table_base)
@@ -235,21 +228,28 @@ if __name__ == '__main__':
     bs.table_base[["Sharp_60", "Sortino_60"]] = bs.table_base["asset"].apply(
         lambda x: find_sharp_sortino(x, 60))  # Инициализация функции поиска
 
-
-
-
+    column_name = ["asset", "Sharp_14", "Sortino_14", "Sharp_60", "Sortino_60"]
     bs.table_base = bs.table_base.dropna(subset=["Sortino_14"])
     print("-" * 10)
     print(bs.table_base)
 
-    bs.table_base.sort_values(by="Sortino_14", inplace=True)
+    bs.table_base.sort_values(by=["Sortino_14", "Sharp_14"], inplace=True)
+
     bs.table_base.drop(["free", "locked"], axis='columns', inplace=True)
     bs.table_base.reset_index(drop=True, inplace=True)
     # print(bs.table_base)
-    bs.table_base = bs.table_base[-20::1]#Таблица с шарпом
+    bs.table_base = bs.table_base[-20::1]  # Таблица с шарпом
+    max_ = ["max"] + (
+        list(bs.table_base[column_name[1:]].max()))  # Значения для определения дипазаона возможных значений
+    print(max_)
+    min_ = ["min"] + (list(bs.table_base[column_name[1:]].min()))
+    max_min = [dict(zip(column_name, max_)), dict(zip(column_name, min_))]
+    print(max_min)
 
+    # bs.table_base=pd.concat([bs.table_base,max_,min_],axis=1,)
 
+    bs.table_base = bs.table_base.append(max_min, ignore_index=True, sort=False)
 
-    insert_excel(bs.table_base)# Функция для вставки в текущий excel
+    insert_excel(bs.table_base)  # Функция для вставки в текущий excel
     print("-" * 20)
     print(bs.table_base)
