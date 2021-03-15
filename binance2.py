@@ -41,34 +41,38 @@ print(time_dd_format)
 
 
 
-print (client)
+#print (client)
 #client = Client(API_key, API_Secret, {"verify": False, "timeout": 20})
 
 info = client.get_account()
-print (info)
+#print (info)
 usd_rub=float(client.get_avg_price(symbol="USDTRUB")["price"])
-print (usd_rub)
+#print (usd_rub)
 
 status = client.get_account_status()
-print (status)
+#print (status)
 #balance = client.get_deposit_history
 
 balance=client.get_account()['balances']
-print(balance)
+#print(balance)
 table=pd.DataFrame(balance)
 table['free']=table['free'].apply(lambda x: float(x))
 table_base=table.copy(deep=True)
 
-table = table[(table['free']) > 0]
-table.sort_values(by=['free'], axis=0, inplace=True, ascending=False)  # Сортировка
+
 table = table.set_index(table.columns[0])
+  # Очистка таблицы от доллара
 table = table.reset_index("asset")
 selection_usdt = table.asset == "USDT"
 volume_usdt = float(table[selection_usdt]["free"])
-table = table[~selection_usdt]  # Очистка таблицы от доллара
+table = table[~selection_usdt]
 
-print("11")
+table = table[(table['free']) > 0]
 
+table.sort_values(by=['free'], axis=0, inplace=True, ascending=False)  # Сортировка
+
+table = table.reset_index(drop=True)
+print(table)
 
 def write_json(data):
     with open(r'C:\Users\Давид\PycharmProjects\Binance\data.json', 'w') as f:json.dump(data, f)

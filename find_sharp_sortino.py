@@ -17,7 +17,10 @@ def fun_atr(table_data):
     table_data["raznost2"] = abs(Candle_hight - Candle_close.shift(-1))
     table_data["raznost3"] = abs(Candle_low - Candle_close.shift(-1))
     table_data['atr'] = table_data[["raznost1", "raznost2", "raznost2"]].max(axis=1)
-    atr = table_data["atr"].sum()
+    table_data=table_data.dropna(axis=0)
+    print (table_data)
+    atr = table_data["atr"].sum() / len(table_data)
+
 
     return atr
 
@@ -37,9 +40,9 @@ def fun_sharp_(table_data):
     srednee_znac_dohodn = table_data["Доходность шарп"].mean()
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
     standart_dev = table_data["Доходность шарп"].std()  # Стандартное отклонение
-
-    # sharp = (srednee_znac_dohodn - Rf) / standart_dev * (52 ** (1 / 2))  # Через стандартное отклонение
-    sharp = (srednee_znac_dohodn - Rf) / atr
+    #sharp = (srednee_znac_dohodn - Rf) / standart_dev * (52 ** (1 / 2))  # Через стандартное отклонение
+    sharp = (srednee_znac_dohodn - Rf) /(standart_dev) ** (1 / 2)  # Через стандартное отклонение
+    #sharp = (srednee_znac_dohodn - Rf) / atr**(1/2)
 
     # print(table_data)
     # print(f"коэффициент Шарпа {sharp}")
@@ -238,13 +241,15 @@ if __name__ == '__main__':
     bs.table_base.drop(["free", "locked"], axis='columns', inplace=True)
     bs.table_base.reset_index(drop=True, inplace=True)
     # print(bs.table_base)
-    bs.table_base = bs.table_base[-20::1]  # Таблица с шарпом
     max_ = ["max"] + (
         list(bs.table_base[column_name[1:]].max()))  # Значения для определения дипазаона возможных значений
     print(max_)
     min_ = ["min"] + (list(bs.table_base[column_name[1:]].min()))
     max_min = [dict(zip(column_name, max_)), dict(zip(column_name, min_))]
     print(max_min)
+
+    bs.table_base = bs.table_base[-22::1]  # Таблица с шарпом
+
 
     # bs.table_base=pd.concat([bs.table_base,max_,min_],axis=1,)
 
