@@ -114,6 +114,7 @@ def resul_plot():
               f"Стоимость активов в рублях {(sum_cost + volume_usdt) * usd_rub}\n"
               f"Наличные доллары$ {volume_usdt}")
         print("\n"*2)
+        return table
 
 
 '''''''''
@@ -130,8 +131,8 @@ def grapf(a):
                     close=a.day_set['Close'])])
     fig.show()
 
-
+table=funct_1()
+table=resul_plot()
 if __name__ == '__main__':
-    funct_1()
     test_cirkl()
 

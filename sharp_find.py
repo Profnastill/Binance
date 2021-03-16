@@ -3,6 +3,18 @@ import datetime
 import pandas as pd
 
 
+def atr(table_data):
+    '''Скользящее среднее'''
+    Candle_close = table_data["Close"]
+    Candle_hight=table_data["Hight"]
+    Candle_low = table_data["Low"]
+    raznos=Candle_hight-Candle_low
+    raznos_2=abs(Candle_hight-Candle_close.shift(-1))
+    raznos_3=(Candle_low-Candle_close.shift(-1))
+
+
+    None
+
 def fun_sharp_(table_data):
     standart_dohodn = 0
     number_of_day = len(table_data)
