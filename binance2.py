@@ -132,7 +132,10 @@ def grapf(a):
     fig.show()
 
 table=funct_1()
-table=resul_plot()
+table=resul_plot()# Таблица с перечнем текущих инструментов в портфеле
+
+
 if __name__ == '__main__':
     test_cirkl()
+
 

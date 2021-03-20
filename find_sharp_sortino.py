@@ -6,7 +6,7 @@ import math
 import xlwings as xw
 import datetime
 
-
+client=bs.client
 def fun_atr(table_data):
     '''Скользящее среднее'''
     Candle_close = table_data["Close"]
@@ -78,6 +78,7 @@ class Candle_class:
         self.candle_hight = table_data["High"]
         self.candle_low = table_data["Low"]
         self.candle_close = table_data["Close"]
+        self.atr=fun_atr(table_data)
         self.candle_model["свеча"] = table_data
 
     def candel_classificator(self):
@@ -161,7 +162,7 @@ def find_sharp_sortino(asset, daily_interval):
 def candel_classificator(table_data, daily_interval):
     '''Определяет тип свечей'''
     table_data = take_data_candle(table_data, daily_interval)  # Запускаем поиск свечей в интервале.
-
+    table_data = take_data_candle(table_data, daily_interval)
     candle_open = table_data["Open"]
     candle_hight = table_data["High"]
     candle_low = table_data["Low"]
