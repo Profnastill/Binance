@@ -5,6 +5,7 @@ import pandas as pd
 import math
 import xlwings as xw
 import datetime
+import numpy as np
 
 client=bs.client
 def fun_atr(table_data):
@@ -20,8 +21,6 @@ def fun_atr(table_data):
     table_data=table_data.dropna(axis=0)
     print (table_data)
     atr = table_data["atr"].sum() / len(table_data)
-
-
     return atr
 
 
@@ -71,38 +70,6 @@ def fun_sortino_(table_data):
     return sortino
 
 
-class Candle_class:
-    def __init__(self, table_data):
-
-        self.candle_open = table_data["Open"]
-        self.candle_hight = table_data["High"]
-        self.candle_low = table_data["Low"]
-        self.candle_close = table_data["Close"]
-        self.atr=fun_atr(table_data)
-        self.candle_model["свеча"] = table_data
-
-    def candel_classificator(self):
-        '''Определяет тип свечей'''
-        pogreshost = 0.5
-        candel_scope = self.candle_low - self.candle_hight  # Размах свечи
-        candel_size = math.fabs(self.candle_open - self.candle_close)  # Тело свечи
-        candel_relation = candel_size / self.candle_close  # Отношение цены открытия к цене закрытия
-        bottomShadow = min(self.candle_open, self.candle_close) - self.candle_low  # Нижняя тень  размер
-        topShadow = self.candle_hight - max(self.candle_open, self.candle_close)  # Верхняя тень
-
-        if bottomShadow > candel_size * 2 and topShadow < 0.1 * candel_scope:
-            self.candle_type = "Молот"
-        elif topShadow > candel_size * 2 and bottomShadow < 0.1 * candel_scope:
-            self.candle_type = "Такури"  # Зонтик висильник
-        elif candel_size < 0.1 * candel_scope and candel_relation < 0.005:  # вопросик по поводу диапазона
-            self.candle_type = "Додзи"
-        elif bottomShadow < topShadow * 4 and candel_relation < 0.005:
-            self.candle_type = "стрекоза"
-        elif (candel_scope - candel_size) / candel_scope < 0.02:
-            self.candle_type = "Белый больш свеча"
-        return self.candle_type
-
-
 def take_data_candle(asset, daily_interval):
     '''
  Функция обработки таблицы для извленения по интервалу и времени параметров свечей.
@@ -120,16 +87,15 @@ def take_data_candle(asset, daily_interval):
         "17928899.62484339" # Can be ignored
     ]
 ]'''
-    # symbol=table.asset[1] # Выбор символа
-    # print (symbol)
+
+
     interval = '1d'
-    # start_str=datetime.datetime(2021,1,1)
     time_delta = datetime.timedelta(daily_interval)  # Интервал вычесления в днях
     time_delta = time_delta.total_seconds()
     print(bs.current_time, time_delta)
     start_str = bs.current_time['serverTime'] / 1000 - time_delta
 
-    # start_str=str(time.mktime(start_str.timetuple()))
+
     print("time", str(start_str))
     print(f"инструмент {asset}")
     try:
@@ -159,21 +125,86 @@ def find_sharp_sortino(asset, daily_interval):
     return pd.Series([sharpa, sortino])
 
 
-def candel_classificator(table_data, daily_interval):
-    '''Определяет тип свечей'''
-    table_data = take_data_candle(table_data, daily_interval)  # Запускаем поиск свечей в интервале.
-    table_data = take_data_candle(table_data, daily_interval)
+def candle_type_analiz(candle):
+    '''Функйия опеределения типа свечи'''
+    print(candle)
+
+    if (candle['bottomShadow'] > candle['size'] * 2) & (candle['topShadow'] < 0.1 *  candle['scope']):#"Это не работает потому что надо ее к списку применять
+        candle['type'] = "Молот"
+    elif (candle['topShadow'] > candle['size'] * 2) & (candle['bottomShadow'] < 0.1 * candle['scope']):
+        candle['type']= "Такури"  # Зонтик висильник
+    elif (candle['size'] < 0.1 * candle['scope']) & (candle['relation'] < 0.005):  # вопросик по поводу диапазона
+        candle['type'] = "Додзи"
+    elif (candle['bottomShadow'] < candle['topShadow'] * 4) & (candle['relation'] < 0.005):
+        candle['type'] = "стрекоза"
+    elif ((candle['scope'] - candle['size']) / candle['scope']) < 0.02:
+        candle['type'] = "Белый больш свеча"
+    else:
+        candle['type']= None
+    print( "Успешно",candle)
+    return candle['type']
+
+def candle_model_classificator(table):
+    '''поис модели по трем дням'''
+    None
+
+
+def candel_classificator(asset, daily_interval):
+    '''Определяет параметры свечей для наборов asset
+    использует candle_type_anliz
+    '''
+    print(asset, daily_interval)
+    candle = take_data_candle(asset, daily_interval)  # Вытаскиваем значения свечей c промощью функции candle
+    pogreshost = 0.5
+    print('_' * 10)
+
+    candle['scope'] = candle['Low'] - candle['High']  # Размах свечи
+    candle['size'] = abs(candle['Open'] - candle['Close'])  # Тело свечи
+
+    candle['relation'] = candle['size'] /candle['Close']  # Отношение цены открытия к цене закрытия
+
+    candle['bottomShadow'] = candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
+    candle['topShadow'] = candle['High'] - candle[["Open", "Close"]].values.max(1)
+
+
+    #candle['type']= np.where((candle['bottomShadow'] > candle['size'] * 2) & (candle['topShadow'] < 0.1 *  candle['scope']),"Молот")
+    candle['atr']=candle.apply(fun_atr,axis=1)
+    print (candle)
+    candle['type']=candle.apply(candle_type_analiz,axis=1)# Получаем множество свечей для заданного asset для каждого дня
+    select_candle=candle[-3::1]# Выбрали последние три дня
+
+    print('---'*10)
+    print(candle)
+    return
+
+
+
+
+
+
+def candel_classificator_old(asset, daily_interval):
+    '''Определяет тип свечей для полученных наборов свечей'''
+    print(asset,daily_interval)
+    table_data = take_data_candle(asset,daily_interval) #Вытаскиваем значения свечей c промощью функции candle
+
     candle_open = table_data["Open"]
     candle_hight = table_data["High"]
     candle_low = table_data["Low"]
     candle_close = table_data["Close"]
 
     pogreshost = 0.5
+    print('_'*10)
+
+
     candel_scope = candle_low - candle_hight  # Размах свечи
-    candel_size = math.fabs(candle_open - candle_close)  # Тело свечи
+    candel_size = abs(candle_open - candle_close)  # Тело свечи
+
+
     candel_relation = candel_size / candle_close  # Отношение цены открытия к цене закрытия
-    bottomShadow = min(candle_open, candle_close) - candle_low  # Нижняя тень  размер
-    topShadow = candle_hight - max(candle_open, candle_close)  # Верхняя тень
+    bottomShadow = table_data[["Open","Close"]].values.min(1) - candle_low# Нижняя тень  размер
+    topShadow = candle_hight - table_data[["Open","Close"]].values.max(1)
+
+    print(bottomShadow,candel_size,candel_scope)
 
     if bottomShadow > candel_size * 2 and topShadow < 0.1 * candel_scope:
         candle_type = "Молот"
@@ -185,6 +216,8 @@ def candel_classificator(table_data, daily_interval):
         candle_type = "стрекоза"
     elif (candel_scope - candel_size) / candel_scope < 0.02:
         candle_type = "Белый больш свеча"
+    else:
+        None
     return candle_type
 
 
@@ -221,7 +254,7 @@ def insert_excel(table):
 if __name__ == '__main__':
     bs.table_base = ask_input()
     print(bs.table_base)
-    # bs.table_base=bs.table_base.loc[1:4]
+    bs.table_base=bs.table_base.loc[1:2]
     # test(bs.table_base)
     # bs.table_base = bs.table  # Если надо найти по портфелю Шарпа включить эту строку.
     # print( bs.table)
@@ -232,8 +265,15 @@ if __name__ == '__main__':
     bs.table_base[["Sharp_60", "Sortino_60"]] = bs.table_base["asset"].apply(
         lambda x: find_sharp_sortino(x, 60))  # Инициализация функции поиска
 
+
+
+
     column_name = ["asset", "Sharp_14", "Sortino_14", "Sharp_60", "Sortino_60"]
-    bs.table_base = bs.table_base.dropna(subset=["Sortino_14"])
+
+    bs.table_base = bs.table_base.dropna(subset=["Sortino_14"])#Удаляем потеренные значения
+    bs.table_base["Сигнал"] = bs.table_base["asset"].apply(lambda x: candel_classificator(x, 14))#Запускаем поисковик свечей
+
+
     print("-" * 10)
     print(bs.table_base)
 
@@ -255,6 +295,7 @@ if __name__ == '__main__':
     # bs.table_base=pd.concat([bs.table_base,max_,min_],axis=1,)
 
     bs.table_base = bs.table_base.append(max_min, ignore_index=True, sort=False)
+
 
     insert_excel(bs.table_base)  # Функция для вставки в текущий excel
     print("-" * 20)

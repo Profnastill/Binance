@@ -46,7 +46,8 @@ print(time_dd_format)
 
 info = client.get_account()
 #print (info)
-usd_rub=float(client.get_avg_price(symbol="USDTRUB")["price"])
+usd_rub=float(client.get_avg_price(symbol="USDTRUB")["price"])#Стоимость доллара к рублю
+bnb_rub=float(client.get_avg_price(symbol="BNBRUB")["price"])
 #print (usd_rub)
 
 status = client.get_account_status()
@@ -63,8 +64,13 @@ table_base=table.copy(deep=True)
 table = table.set_index(table.columns[0])
   # Очистка таблицы от доллара
 table = table.reset_index("asset")
-selection_usdt = table.asset == "USDT"
-volume_usdt = float(table[selection_usdt]["free"])
+
+selection_usdt = (table.asset == "USDT") | (table.asset ==  'SPARTA')
+
+volume_usdt = table[selection_usdt]['free'].apply(lambda x: float(x))#Как то переписать на более унивирскальный вариант
+
+
+print(volume_usdt)
 table = table[~selection_usdt]
 
 table = table[(table['free']) > 0]
@@ -72,19 +78,29 @@ table = table[(table['free']) > 0]
 table.sort_values(by=['free'], axis=0, inplace=True, ascending=False)  # Сортировка
 
 table = table.reset_index(drop=True)
-print(table)
+
 
 def write_json(data):
     with open(r'C:\Users\Давид\PycharmProjects\Binance\data.json', 'w') as f:json.dump(data, f)
 
 
-def funct_1():
+def func_2(asset):
+    x=asset
+    try:
+        val=float(client.get_avg_price(symbol=x + 'USDT')["price"])
+    except:
+        val=float(client.get_avg_price(symbol=x + 'BNB')["price"])
+    return val
+    # приписать что если не смогла ничего найти
+
+
+
+def funct_1(tiker='USDT'):
     """"Отделяем доллары от основной таблицы"""
-
-
-    table["Price_USDT"] = table["asset"].apply(lambda x:    float(client.get_avg_price(symbol=x + "USDT")["price"]))  # Получаем цену текущую активов.
+    tiker='USDT'# USDT
+    table["Price_USDT"] = table["asset"].apply(lambda x: float(client.get_avg_price(symbol=x + tiker)["price"]))  # Получаем цену текущую активов.
     table['USDT_cost'] = table["free"] * table["Price_USDT"] # Стоимость активов в долларах
-    table['RUB_cost']=table['USDT_cost']*usd_rub
+    table['RUB_cost']=table['USDT_cost']*usd_rub#usd_rub
     return table
 
 def test_cirkl():
