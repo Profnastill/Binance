@@ -168,7 +168,7 @@ def candel_classificator(asset, daily_interval):
 
 
     #candle['type']= np.where((candle['bottomShadow'] > candle['size'] * 2) & (candle['topShadow'] < 0.1 *  candle['scope']),"Молот")
-    candle['atr']=candle.apply(fun_atr,axis=1)
+    #candle['atr']=candle.apply(fun_atr,axis=1)
     print (candle)
     candle['type']=candle.apply(candle_type_analiz,axis=1)# Получаем множество свечей для заданного asset для каждого дня
     select_candle=candle[-3::1]# Выбрали последние три дня
@@ -254,7 +254,7 @@ def insert_excel(table):
 if __name__ == '__main__':
     bs.table_base = ask_input()
     print(bs.table_base)
-    bs.table_base=bs.table_base.loc[1:2]
+    #bs.table_base=bs.table_base.loc[1:2]
     # test(bs.table_base)
     # bs.table_base = bs.table  # Если надо найти по портфелю Шарпа включить эту строку.
     # print( bs.table)
