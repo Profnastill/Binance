@@ -74,4 +74,8 @@ print (range(len(list)))
 if (abs(open/close)):
     None
 list=[1,2,3,4,5,6,7,9,10,11]
-print(list[-3::1])
+print('rezult',list[-3::1])
+
+a='[б, б]'
+b='[б, к]'
+print( a==b)
