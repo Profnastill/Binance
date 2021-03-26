@@ -33,18 +33,22 @@ converter = lambda x : x*2 if x < 11 else (x*3 if x < 22 else x)
 
 client = Client(API_key, API_Secret)
 current_time=client.get_server_time()
-print(current_time['serverTime'])
+print("время сервера",current_time['serverTime'])
 
 time_dd_format=time.ctime(current_time['serverTime']/1000)
-print(time_dd_format)
+print("время сервера",time_dd_format)
 
 
 
 
 #print (client)
 #client = Client(API_key, API_Secret, {"verify": False, "timeout": 20})
+try:
+    info = client.get_account()
+except binance.client.BinanceAPIException as e:
+    print (e.status_code)
+    print (e.message)
 
-info = client.get_account()
 #print (info)
 usd_rub=float(client.get_avg_price(symbol="USDTRUB")["price"])#Стоимость доллара к рублю
 bnb_rub=float(client.get_avg_price(symbol="BNBRUB")["price"])

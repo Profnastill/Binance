@@ -107,5 +107,6 @@ def print_pressed_keys(e):
 
 if __name__ == '__main__':
     #print(table["asset"] )
+
     keyboard.hook(print_pressed_keys)
     keyboard.wait()
