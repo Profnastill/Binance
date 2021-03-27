@@ -129,13 +129,16 @@ def find_sharp_sortino(asset, daily_interval):
     return pd.Series([sharpa, sortino])
 
 
-def candle_type_analiz(candle, color):
+def candle_type_analiz(candle):
     """Определение типа свечи
+    Принимаете таблицу свечей  для asset
     color= бел. or крас. цвет свечи"""
-    #print('-x-x-x-'*10)
-    #print(candle)
-
-
+    print('-x-x-x-'*10)
+    print(candle)
+    if candle['Open'] > candle['Close']:  # определяем цвет свечей
+        color =  "бел."
+    else:
+        color =  "крас."
 
 
     if (candle['scope']==0) & (candle['size']==0):
@@ -159,16 +162,7 @@ def candle_type_analiz(candle, color):
     return candle_type
 
 
-def candle_color_analiz(candle):
-    """Функция обертка  для candle_type_analiz  опеределения типа свечи  по цвету"""
-    print(candle)
-    print(candle['Open'])
-    if candle['Open'] > candle['Close']:  # определяем цвет свечей
-        candle['type'] = candle_type_analiz(candle, "бел.")
-    else:
-        candle['type'] = candle_type_analiz(candle, "крас.")
 
-    return candle['type']
 
 
 def candle_type_analiz_old(candle):
@@ -222,13 +216,16 @@ def candel_classificator(asset, daily_interval):
     print('-//--' * 10)
     #print(candle)
     # candle['type'] = candle.apply(candle_type_analiz,axis=1)  # Получаем множество свечей для заданного asset для каждого дня
-    candle['type'] = candle.apply(candle_color_analiz, axis=1)# Определяем типы свечей для asset
-    select_candle = candle['type'][-3::1].tolist()  # Выбрали свечи за последние три дня
-    #print(candle)
-    #rezult=  (candlmodelSort.candles_model_analiz(candle))# Запуск модуля проверки моделей
+    candle['type'] = candle.apply(candle_type_analiz, axis=1)# Определяем типы свечей для asset
+    print(candle)
+    select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
+    time=select_candle['Open']
 
 
-    return [[select_candle],"хрен"]
+
+    rezult=  (candlmodelSort.candles_model_analiz(candle))# Запуск модуля проверки моделей
+
+    return pd.Series([(list(select_candle['type'])),rezult])
 
 
 def ask_input():
@@ -279,8 +276,9 @@ if __name__ == '__main__':
 
     bs.table_base = bs.table_base.dropna(subset=["Sortino_14"])  # Удаляем потеренные значения
 
-    bs.table_base[["Тип свечи","Сигнал_модель"]] = bs.table_base["asset"].apply(
-        lambda x: candel_classificator(x, 14))  # Запускаем поисковик свечей
+    bs.table_base[["Время","Тип свечи","Сигнал_модель"]] = bs.table_base["asset"].apply(
+        lambda x: candel_classificator(x, 10))  # Запускаем поисковик свечей
+
 
     print("-" * 10)
     print(bs.table_base)
