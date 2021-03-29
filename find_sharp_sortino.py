@@ -8,6 +8,11 @@ import datetime
 import numpy as np
 import Test_otbor_candle as candlmodelSort
 
+pd.options.display.max_rows=1000
+pd.options.display.max_columns=20
+pd.options.display.expand_frame_repr = False
+
+
 client = bs.client
 
 
@@ -17,20 +22,25 @@ def fun_atr(table_data):
     Candle_close = table_data["Close"]
     Candle_hight = table_data["High"]
     Candle_low = table_data["Low"]
-    table_data["raznost1"] = Candle_hight - Candle_low
+    table_data["raznost1"] = abs(Candle_hight - Candle_low)
 
-    table_data["raznost2"] = abs(Candle_hight - Candle_close.shift(-1))
-    table_data["raznost3"] = abs(Candle_low - Candle_close.shift(-1))
+    table_data["raznost2"] = abs(Candle_hight - Candle_close.shift(periods=-1))
+    table_data["raznost3"] = abs(Candle_low - Candle_close.shift(periods=-1))
+
+    print ('разность',Candle_low,abs(Candle_close.shift(periods=-1)))
     table_data['atr'] = table_data[["raznost1", "raznost2", "raznost2"]].max(axis=1)
-    table_data = table_data.dropna(axis=0)
     print(table_data)
-    atr = table_data["atr"].sum() / len(table_data)
+    table_data = table_data.dropna(axis=0)
+    #print(table_data)
+
+    atr = table_data["atr"].mean()
+
     return atr
 
 
 def fun_sharp_(table_data):
     """Нахождение значения коэф шарпа пока без atr"""
-    # atr = fun_atr(table_data)  # Нахождение скользящего среднего
+    atr = fun_atr(table_data)  # Нахождение скользящего среднего
 
     standart_dohodn = 0
     # umber_of_day = len(table_data)
@@ -39,10 +49,12 @@ def fun_sharp_(table_data):
     table_data["Доходность шарп"] = Candle_close.diff() / Candle_close.shift(-1)
     srednee_znac_dohodn = table_data["Доходность шарп"].mean()
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
-    standart_dev = table_data["Доходность шарп"].std()  # Стандартное отклонение
+    standart_dev = table_data["Доходность шарп"].std(skipna=True)  # Стандартное отклонение
     # sharp = (srednee_znac_dohodn - Rf) / standart_dev * (52 ** (1 / 2))  # Через стандартное отклонение
-    sharp = (srednee_znac_dohodn - Rf) / standart_dev ** (1 / 2)  # Через стандартное отклонение
-    # sharp = (srednee_znac_dohodn - Rf) / atr**(1/2)
+    sharp = (srednee_znac_dohodn - Rf) / standart_dev # Через стандартное отклонение
+    #sharp = (srednee_znac_dohodn - Rf) / atr
+    print (f'стандарное откл= {standart_dev}, atr={atr}')
+
 
     # print(table_data)
     # print(f"коэффициент Шарпа {sharp}")
@@ -110,7 +122,7 @@ def take_data_candle(asset, daily_interval):
                                              "Taker buy base asset volume",
                                              "Taker buy quote asset volume", "Can be ignored"])
 
-    table_data = table_data[["Open time", "Open", "Close", "High", "Low"]].applymap(lambda x: float(x))
+    table_data = table_data[["Open time", "Open", "Close", "High", "Low","Volume"]].applymap(lambda x: float(x))
     table_data["Open time"] = table_data["Open time"].apply(
         lambda x: datetime.datetime.fromtimestamp(int(x) / 1000).date())
 
@@ -121,7 +133,6 @@ def take_data_candle(asset, daily_interval):
 def find_sharp_sortino(asset, daily_interval):
     """Функция запуска Шарпа и Сортино и объединения функций"""
     table_data = take_data_candle(asset, daily_interval)
-    print(table_data)
     sharpa = fun_sharp_(table_data)
     sortino = fun_sortino_(table_data)  # Запуск функции пересчета Шарпа
     # atr = fun_atr(table_data)# Значение скольязящего среднего может потом пригодится
@@ -133,99 +144,60 @@ def candle_type_analiz(candle):
     """Определение типа свечи
     Принимаете таблицу свечей  для asset
     color= бел. or крас. цвет свечи"""
-    print('-x-x-x-'*10)
-    print(candle)
-    if candle['Open'] > candle['Close']:  # определяем цвет свечей
+    if candle['Open'] < candle['Close']:  # определяем цвет свечей
         color =  "бел."
     else:
         color =  "крас."
+    koef=1.5# Коэффициент для отладки моделей процентное отношение
+    koef_2=0.15
 
 
     if (candle['scope']==0) & (candle['size']==0):
         candle_type= f"доджи 4 цен"
-    elif ((candle['size'] / candle['mean'] > 1.3) | (candle['size'] / candle['Close'] > 0.05)) \
-            & (candle['scope']  < 1.05*candle['size'] ):  # Уточнить размер теней.
-        candle_type = f"Больш. {color} свеча"  # Марабудзу
-    elif ((candle['size'] / candle['mean'] > 0.3) | (candle['size'] / candle['Close'] > 0.95)) \
-            & (candle['scope']   < 1.05*candle['size']):  # Уточнить размер теней.
+    elif ((candle['size'] / candle['candl_mean'] > 1.3) ) \
+            & (candle['scope']  < koef*candle['size'] ):  # Уточнить размер теней.
+        candle_type = f"Больш. {color} свеча"  # Марабудзу | (candle['size'] / candle['Open'] > 0.05)
+
+    elif ((candle['size'] / candle['candl_mean'] > 0.3) ) \
+            & (candle['scope']   < 1.05*candle['size']):  # Уточнить размер теней. | (candle['size'] / candle['Open'] > 0.95)
         candle_type = f"Мален. {color} свеча"
-    elif (candle['size'] < 0.5 * candle['bottomShadow']) | (candle['topShadow'] / candle['scope'] < 0.1):
+    elif (candle['size'] < 0.5 * candle['bottomShadow']) & (candle['topShadow'] / candle['scope'] < 0.1):
         candle_type = f"{color} зонтик"
-    elif (candle['size'] < 0.5 * candle['topShadow']) | (candle['bottomShadow'] / candle['scope'] < 0.1):
+    elif (candle['size'] < 0.5 * candle['topShadow']) & (candle['bottomShadow'] / candle['scope'] < 0.1):
         candle_type = f"{color} молот"
     elif 0.01 < candle['size'] / candle['scope'] < 0.03:
         candle_type = f"{color} доджи"
     else:
         candle_type = None
-    print('Успешно')
-    print(candle_type)
     return candle_type
 
 
 
 
 
-def candle_type_analiz_old(candle):
-    """Функйия опеределения типа свечи"""
-
-    if (candle['bottomShadow'] > candle['size'] * 2) & (
-            candle['topShadow'] < 0.1 * candle['scope']):  # "Это не работает потому что надо ее к списку применять
-        candle['type'] = "Молот"
-    elif (candle['topShadow'] > candle['size'] * 2) & (candle['bottomShadow'] < 0.1 * candle['scope']):
-        candle['type'] = "Такури"  # Зонтик висильник
-    elif (candle['size'] < 0.1 * candle['scope']) & (candle['relation'] < 0.005):  # вопросик по поводу диапазона
-        candle['type'] = "Додзи"
-    elif (candle['bottomShadow'] < candle['topShadow'] * 4) & (candle['relation'] < 0.005):
-        candle['type'] = "стрекоза(Тонбо)"
-    elif ((candle['scope'] - candle['size']) / candle['scope']) < 0.02:
-        candle['type'] = "Белый больш свеча"
-    elif (candle['topShadow'] < 0.1 * candle['scope']) & (candle['scope'] > candle['atr']):
-        candle['type'] = "Марубодзу"
-    elif (candle['topShadow'] > candle['size'] * 2) & (
-            candle['scope'] - candle['topShadow'] - candle['size'] > candle['bottomShadow']):
-        candle['type'] = 'Черная свеч с верх тен'
-
-    elif candle['relation'] < 1:
-        candle['type'] = None
-    else:
-        candle['type'] = None
-    print("Успешно", candle)
-    return candle['type']  #
-
-
 def candel_classificator(asset, daily_interval):
     """'Определяет параметры свечей для наборов asset использует candle_type_anliz''"""
-    print(asset, daily_interval)
     candle = take_data_candle(asset, daily_interval)  # Вытаскиваем значения свечей c промощью функции candle
     pogreshost = 0.5
-    print('_' * 10)
-    print(candle)
-
     candle['scope'] = candle['High'] - candle['Low']  # Размах свечи
     candle['size'] = abs(candle['Open'] - candle['Close'])  # Тело свечи
-
     candle['relation'] = candle['size'] / candle['Close']  # Отношение цены открытия к цене закрытия
-
     candle['bottomShadow'] = candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
     candle['topShadow'] = candle['High'] - candle[["Open", "Close"]].values.max(1)
-
-    # candle['type']= np.where((candle['bottomShadow'] > candle['size'] * 2) & (candle['topShadow'] < 0.1 *  candle['scope']),"Молот")
     candle['atr'] = (fun_atr(candle))  # Для указанной таблицы расчитываем ATR
+    candle['candl_mean'] = candle['size'].mean(axis=0)
+    candle['volume_mean']= candle['Volume'].mean(axis=0)
 
-    candle['mean'] = candle['size'].mean(axis=0)
-    print('-//--' * 10)
+    #print(asset, daily_interval)
     #print(candle)
-    # candle['type'] = candle.apply(candle_type_analiz,axis=1)  # Получаем множество свечей для заданного asset для каждого дня
+
     candle['type'] = candle.apply(candle_type_analiz, axis=1)# Определяем типы свечей для asset
-    print(candle)
+
     select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
-    time=select_candle['Open']
-
-
-
+    time=(select_candle['Open time'][0:1:1].values)
     rezult=  (candlmodelSort.candles_model_analiz(candle))# Запуск модуля проверки моделей
 
-    return pd.Series([(list(select_candle['type'])),rezult])
+    return pd.Series([time[0],str(list(select_candle['type'])),str(rezult)])
 
 
 def ask_input():
@@ -258,10 +230,16 @@ def insert_excel(table):
         xlsheet.range("A1").options(index=False).value = table
 
 
+
+def convert(time):
+    return pd.Timestamp(time.timestamp(), unit='s')
+
+
+
 if __name__ == '__main__':
     bs.table_base = ask_input()
     print(bs.table_base)
-    bs.table_base = bs.table_base.loc[1:2]
+    #bs.table_base = bs.table_base.loc[1:2]
     # test(bs.table_base)
     # bs.table_base = bs.table  # Если надо найти по портфелю Шарпа включить эту строку.
     # print( bs.table)
@@ -300,6 +278,8 @@ if __name__ == '__main__':
     # bs.table_base=pd.concat([bs.table_base,max_,min_],axis=1,)
 
     bs.table_base = bs.table_base.append(max_min, ignore_index=True, sort=False)
+    print(bs.table_base)
+
 
     insert_excel(bs.table_base)  # Функция для вставки в текущий excel
     print("-" * 20)

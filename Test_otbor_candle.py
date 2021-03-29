@@ -21,13 +21,10 @@ def candles_model_analiz(data):
         test_tb=pd.DataFrame({'Три солдата': ['Больш. бел. свеча', 'Больш. бел. свеча', 'Больш. бел. свеча'],
                               'Три вороны': ['Больш. крас. свеча', 'Больш. крас. свеча', 'Больш. крас. свеча'],
                               'Удар сокола': ['Больш. бел. свеча','"Мален. крас. свеча','Больш. крас. свеча']})
-
     x = len(data)
     print (x)
     ls=[]
 
-    print('-ggg1-' * 10)
-    print(data)
     for name in range(x // 3):
         select = data[x - 3:x:1]  # получаем срез из набора свечей
         print("--t" * 10)
@@ -38,10 +35,6 @@ def candles_model_analiz(data):
             list_tb = (test_tb[name].values)
             list_select = (select['type'].values)
             condition = str(list_tb) == str(list_select)
-            print("-/-"*3)
-            print ((list_tb))
-            print (str(list_select))
-            print("-/-" * 3)
             #find_ = __naznachalka(select, condition, name)# Это функция какой то бред так как пустая по сути
             if condition == True:
                 print("да")
