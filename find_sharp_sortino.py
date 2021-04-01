@@ -8,10 +8,9 @@ import datetime
 import numpy as np
 import Test_otbor_candle as candlmodelSort
 
-pd.options.display.max_rows=1000
-pd.options.display.max_columns=20
+pd.options.display.max_rows = 1000
+pd.options.display.max_columns = 20
 pd.options.display.expand_frame_repr = False
-
 
 client = bs.client
 
@@ -27,11 +26,11 @@ def fun_atr(table_data):
     table_data["raznost2"] = abs(Candle_hight - Candle_close.shift(periods=-1))
     table_data["raznost3"] = abs(Candle_low - Candle_close.shift(periods=-1))
 
-    print ('разность',Candle_low,abs(Candle_close.shift(periods=-1)))
+    print('разность', Candle_low, abs(Candle_close.shift(periods=-1)))
     table_data['atr'] = table_data[["raznost1", "raznost2", "raznost2"]].max(axis=1)
     print(table_data)
     table_data = table_data.dropna(axis=0)
-    #print(table_data)
+    # print(table_data)
 
     atr = table_data["atr"].mean()
 
@@ -51,10 +50,9 @@ def fun_sharp_(table_data):
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
     standart_dev = table_data["Доходность шарп"].std(skipna=True)  # Стандартное отклонение
     # sharp = (srednee_znac_dohodn - Rf) / standart_dev * (52 ** (1 / 2))  # Через стандартное отклонение
-    sharp = (srednee_znac_dohodn - Rf) / standart_dev # Через стандартное отклонение
-    #sharp = (srednee_znac_dohodn - Rf) / atr
-    print (f'стандарное откл= {standart_dev}, atr={atr}')
-
+    sharp = (srednee_znac_dohodn - Rf) / standart_dev  # Через стандартное отклонение
+    # sharp = (srednee_znac_dohodn - Rf) / atr
+    print(f'стандарное откл= {standart_dev}, atr={atr}')
 
     # print(table_data)
     # print(f"коэффициент Шарпа {sharp}")
@@ -122,7 +120,7 @@ def take_data_candle(asset, daily_interval):
                                              "Taker buy base asset volume",
                                              "Taker buy quote asset volume", "Can be ignored"])
 
-    table_data = table_data[["Open time", "Open", "Close", "High", "Low","Volume"]].applymap(lambda x: float(x))
+    table_data = table_data[["Open time", "Open", "Close", "High", "Low", "Volume"]].applymap(lambda x: float(x))
     table_data["Open time"] = table_data["Open time"].apply(
         lambda x: datetime.datetime.fromtimestamp(int(x) / 1000).date())
 
@@ -145,21 +143,21 @@ def candle_type_analiz(candle):
     Принимаете таблицу свечей  для asset
     color= бел. or крас. цвет свечи"""
     if candle['Open'] < candle['Close']:  # определяем цвет свечей
-        color =  "бел."
+        color = "бел."
     else:
-        color =  "крас."
-    koef=1.5# Коэффициент для отладки моделей процентное отношение
-    koef_2=0.15
+        color = "крас."
+    koef = 1.5  # Коэффициент для отладки моделей процентное отношение
+    koef_2 = 0.15
 
-
-    if (candle['scope']==0) & (candle['size']==0):
-        candle_type= f"доджи 4 цен"
-    elif ((candle['size'] / candle['candl_mean'] > 1.3) ) \
-            & (candle['scope']  < koef*candle['size'] ):  # Уточнить размер теней.
+    if (candle['scope'] == 0) & (candle['size'] == 0):
+        candle_type = f"доджи 4 цен"
+    elif ((candle['size'] / candle['candl_mean'] > 1.3)) \
+            & (candle['scope'] < koef * candle['size']):  # Уточнить размер теней.
         candle_type = f"Больш. {color} свеча"  # Марабудзу | (candle['size'] / candle['Open'] > 0.05)
 
-    elif ((candle['size'] / candle['candl_mean'] > 0.3) ) \
-            & (candle['scope']   < 1.05*candle['size']):  # Уточнить размер теней. | (candle['size'] / candle['Open'] > 0.95)
+    elif ((candle['size'] / candle['candl_mean'] > 0.3)) \
+            & (candle['scope'] < 1.05 * candle[
+        'size']):  # Уточнить размер теней. | (candle['size'] / candle['Open'] > 0.95)
         candle_type = f"Мален. {color} свеча"
     elif (candle['size'] < 0.5 * candle['bottomShadow']) & (candle['topShadow'] / candle['scope'] < 0.1):
         candle_type = f"{color} зонтик"
@@ -172,7 +170,11 @@ def candle_type_analiz(candle):
     return candle_type
 
 
-
+def fun_volume(data):
+    '''Функция вычесления объем принимает свечу дневную'''
+    #data['изм Объема %'] = (data['Volume'] / data['volume_mean'] - 1) * 100
+    data['изм Объема %'] = (data['Volume'] / data['volume_mean'])# Черех стандартное отклонение
+    return data['изм Объема %']
 
 
 def candel_classificator(asset, daily_interval):
@@ -185,19 +187,23 @@ def candel_classificator(asset, daily_interval):
     candle['bottomShadow'] = candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
     candle['topShadow'] = candle['High'] - candle[["Open", "Close"]].values.max(1)
     candle['atr'] = (fun_atr(candle))  # Для указанной таблицы расчитываем ATR
-    candle['candl_mean'] = candle['size'].mean(axis=0)
-    candle['volume_mean']= candle['Volume'].mean(axis=0)
+    candle['candl_mean'] = candle['size'].std(axis=0)
 
-    #print(asset, daily_interval)
-    #print(candle)
-
-    candle['type'] = candle.apply(candle_type_analiz, axis=1)# Определяем типы свечей для asset
+    # print(asset, daily_interval)
+    # print(candle)
+    candle['volume_mean'] = candle['Volume'].mean(axis=0)# Раассчитываем для полного выбора 10 дней
 
     select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
-    time=(select_candle['Open time'][0:1:1].values)
-    rezult=  (candlmodelSort.candles_model_analiz(candle))# Запуск модуля проверки моделей
 
-    return pd.Series([time[0],str(list(select_candle['type'])),str(rezult)])
+    time = (select_candle['Open time'][0:1:1].values)
+    select_candle['type'] = select_candle.apply(candle_type_analiz, axis=1)  # Определяем типы свечей для asset
+
+    select_candle['изм Объема %'] = select_candle.apply(fun_volume, axis=1)  # Запуск функции изменения объема
+    candle_volume_max = select_candle['изм Объема %'].max()
+
+    model_rezult = (candlmodelSort.candles_model_analiz(select_candle))  # Запуск модуля проверки моделей
+
+    return pd.Series([time[0], str(list(select_candle['type'])), str(model_rezult), candle_volume_max])
 
 
 def ask_input():
@@ -230,20 +236,15 @@ def insert_excel(table):
         xlsheet.range("A1").options(index=False).value = table
 
 
-
 def convert(time):
     return pd.Timestamp(time.timestamp(), unit='s')
-
 
 
 if __name__ == '__main__':
     bs.table_base = ask_input()
     print(bs.table_base)
     #bs.table_base = bs.table_base.loc[1:2]
-    # test(bs.table_base)
-    # bs.table_base = bs.table  # Если надо найти по портфелю Шарпа включить эту строку.
-    # print( bs.table)
-    # take_data_candle(bs.table_base)
+
 
     bs.table_base[["Sharp_14", "Sortino_14"]] = bs.table_base["asset"].apply(
         lambda x: find_sharp_sortino(x, 14))  # Инициализация функции поиска
@@ -254,9 +255,8 @@ if __name__ == '__main__':
 
     bs.table_base = bs.table_base.dropna(subset=["Sortino_14"])  # Удаляем потеренные значения
 
-    bs.table_base[["Время","Тип свечи","Сигнал_модель"]] = bs.table_base["asset"].apply(
+    bs.table_base[["Время", "Тип свечи", "Сигнал_модель", "изм Объема"]] = bs.table_base["asset"].apply(
         lambda x: candel_classificator(x, 10))  # Запускаем поисковик свечей
-
 
     print("-" * 10)
     print(bs.table_base)
@@ -279,7 +279,6 @@ if __name__ == '__main__':
 
     bs.table_base = bs.table_base.append(max_min, ignore_index=True, sort=False)
     print(bs.table_base)
-
 
     insert_excel(bs.table_base)  # Функция для вставки в текущий excel
     print("-" * 20)
