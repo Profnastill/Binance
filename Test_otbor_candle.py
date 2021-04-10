@@ -2,49 +2,34 @@ import pandas as pd
 import random as rd
 
 
-def __naznachalka(select, condition, name):
-    if condition == True:
-        print("да")
-        print([select['Open time'], select['type']])
-        data = name  # name-это название модели
-        return select['Open time'], name
-    else:
-        print("нет")
-        print(select['type'])
-        # Ничего не возвращает если модель не найдена
-        return select['Open time']
-
-
 def candles_model_analiz(data):
     if __name__ == '__main__':
         test_tb = pd.DataFrame(
             {'такури': ['б', 'б', 'б'], 'зонтик': ['к', 'к', 'к']})  # строка только для теста как модуля
     else:
-        test_tb = pd.DataFrame({'Три солдата': ['Больш. бел. свеча', 'Больш. бел. свеча', 'Больш. бел. свеча'],
-                                'Три вороны': ['Больш. крас. свеча', 'Больш. крас. свеча', 'Больш. крас. свеча'],
-                                'Удар сокола': ['Больш. бел. свеча', '"Мален. крас. свеча', 'Больш. крас. свеча'],
-                                })
+        test_tb = pd.DataFrame({'Три солдата': ['Б. бел.', 'Б. бел.', 'Б. бел.'],
+                                'Три вороны': ['Б. крас.', 'Б. крас.', 'Б. крас.'],
+                                'Удар сокола': ['Б. бел.', '"М. крас.', 'Б. крас.'],
+                                'Две черные вороны':['Б. бел. свеча','М. крас. свеча','Б. крас.'],
+                                'Черные в ряд':['Б. бел.','Б. крас.','Б. крас.'],
+                                'Черные в ряд_2': ['Б. бел. свеча','Б. крас.', 'М. крас.'],
+                                'Белые в ряд':['Б. крас.','Б. бел.','Б. бел.'],
+                                'Белые в ряд_2':['Б. крас.','М. бел.','М. бел.']})
     x = len(data)
-    print(x)
     ls = []
 
     for name in list(test_tb.columns.values):  # name-это название модели
 
         list_tb = (test_tb[name].values)  # Получаем модели возможных комбинаций свечей
         n_lenght = len(list_tb)
-        print('длина списка', n_lenght)
-
         for i in range(x // n_lenght):  # Перебираем модели
-
             select = data[x - 3:x:1]  # получаем срез из набора свечей
             print("--t" * 10)
             print(select)
             x -= 1
             print(list(test_tb.columns.values))
             list_select = (select['type'].values)
-
             condition = str(list_tb) == str(list_select)
-            # find_ = __naznachalka(select, condition, name)# Это функция какой то бред так как пустая по сути
             if condition == True:
                 print("да")
                 name  # name-это название модели
@@ -64,34 +49,6 @@ def candles_model_analiz(data):
 
     print("результат поиска модели", ls)
     return ls
-
-
-def olf():
-    for name in range(x // 3):
-        select = data[x - 3:x:1]  # получаем срез из набора свечей
-        print("--t" * 10)
-        print(select)
-        x -= 1
-        print(list(test_tb.columns.values))
-        for name in list(test_tb.columns.values):  # Перебираем модели
-            list_tb = (test_tb[name].values)
-            list_select = (select['type'].values)
-            condition = str(list_tb) == str(list_select)
-            # find_ = __naznachalka(select, condition, name)# Это функция какой то бред так как пустая по сути
-            if condition == True:
-                print("да")
-                name  # name-это название модели
-                print(select)
-                print(select['Open time'][0:1])
-
-                ls.append([(select['Open time'][0:1].values), name])
-
-            else:
-                print("нет")
-                print(select['type'])
-                # Ничего не возвращает если модель не найдена
-                # ls.append(select['Open time'])
-        # print("ls", ls)
 
 
 if __name__ == '__main__':

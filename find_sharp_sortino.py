@@ -1,5 +1,5 @@
 # Сортино
-import binance2 as bs
+import binance3 as bs
 import datetime
 import pandas as pd
 import math
@@ -146,25 +146,28 @@ def candle_type_analiz(candle):
         color = "бел."
     else:
         color = "крас."
-    koef = 1.5  # Коэффициент для отладки моделей процентное отношение
+    koef = 1.6  # Коэффициент для отладки моделей процентное отношение
     koef_2 = 0.15
 
     if (candle['scope'] == 0) & (candle['size'] == 0):
         candle_type = f"доджи 4 цен"
     elif ((candle['size'] / candle['candl_mean'] > 1.3)) \
             & (candle['scope'] < koef * candle['size']):  # Уточнить размер теней.
-        candle_type = f"Больш. {color} свеча"  # Марабудзу | (candle['size'] / candle['Open'] > 0.05)
-
+        candle_type = f"Б. {color}"  # Марабудзу | (candle['size'] / candle['Open'] > 0.05)
     elif ((candle['size'] / candle['candl_mean'] > 0.3)) \
             & (candle['scope'] < 1.05 * candle[
         'size']):  # Уточнить размер теней. | (candle['size'] / candle['Open'] > 0.95)
-        candle_type = f"Мален. {color} свеча"
+        candle_type = f"М. {color}"
     elif (candle['size'] < 0.5 * candle['bottomShadow']) & (candle['topShadow'] / candle['scope'] < 0.1):
         candle_type = f"{color} зонтик"
     elif (candle['size'] < 0.5 * candle['topShadow']) & (candle['bottomShadow'] / candle['scope'] < 0.1):
         candle_type = f"{color} молот"
     elif 0.01 < candle['size'] / candle['scope'] < 0.03:
         candle_type = f"{color} доджи"
+    elif (candle['size']> candle['atr'])& (candle['bottomShadow']<0.1* candle['scope']):
+        candle_type = f"Удар вверх"
+    elif (candle['size'] < candle['atr']) & (candle['topShadow']<0.1* candle['scope']):
+        candle_type = f"Удар вниз"
     else:
         candle_type = None
     return candle_type
@@ -192,14 +195,18 @@ def candel_classificator(asset, daily_interval):
     # print(asset, daily_interval)
     # print(candle)
     candle['volume_mean'] = candle['Volume'].mean(axis=0)# Раассчитываем для полного выбора 10 дней
+    print ("Запуск классификатора",asset)
+
 
     select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
 
     time = (select_candle['Open time'][0:1:1].values)
+
+
     select_candle['type'] = select_candle.apply(candle_type_analiz, axis=1)  # Определяем типы свечей для asset
 
-    select_candle['изм Объема %'] = select_candle.apply(fun_volume, axis=1)  # Запуск функции изменения объема
-    candle_volume_max = select_candle['изм Объема %'].max()
+    select_candle['изм_Объема %'] = select_candle.apply(fun_volume, axis=1)  # Запуск функции изменения объема
+    candle_volume_max = select_candle['изм_Объема %'].max()
 
     model_rezult = (candlmodelSort.candles_model_analiz(select_candle))  # Запуск модуля проверки моделей
 
@@ -216,10 +223,11 @@ def ask_input():
     if a == 1:
         bs.table_base = bs.table
         return bs.table_base
-    else:
+    elif a==0:
         bs.table_base = bs.table_base
-
         return bs.table_base
+    else:
+        return ask_input()
 
 
 def insert_excel(table):
@@ -243,7 +251,7 @@ def convert(time):
 if __name__ == '__main__':
     bs.table_base = ask_input()
     print(bs.table_base)
-    #bs.table_base = bs.table_base.loc[1:2]
+    #bs.table_base = bs.table_base.loc[1:4]
 
 
     bs.table_base[["Sharp_14", "Sortino_14"]] = bs.table_base["asset"].apply(
@@ -255,13 +263,13 @@ if __name__ == '__main__':
 
     bs.table_base = bs.table_base.dropna(subset=["Sortino_14"])  # Удаляем потеренные значения
 
-    bs.table_base[["Время", "Тип свечи", "Сигнал_модель", "изм Объема"]] = bs.table_base["asset"].apply(
+    bs.table_base[["Время", "Тип свечи", "Сигнал_модель", "изм_Объема"]] = bs.table_base["asset"].apply(
         lambda x: candel_classificator(x, 10))  # Запускаем поисковик свечей
 
     print("-" * 10)
     print(bs.table_base)
 
-    bs.table_base.sort_values(by=["Sortino_14", "Sharp_14"], inplace=True)
+    bs.table_base.sort_values(by=["Sortino_14", "Sharp_14"], inplace=True)# Сортировка
 
     bs.table_base.drop(["free", "locked"], axis='columns', inplace=True)
     bs.table_base.reset_index(drop=True, inplace=True)
@@ -270,16 +278,22 @@ if __name__ == '__main__':
         list(bs.table_base[column_name[1:]].max()))  # Значения для определения дипазаона возможных значений
     print(max_)
     min_ = ["min"] + (list(bs.table_base[column_name[1:]].min()))
-    max_min = [dict(zip(column_name, max_)), dict(zip(column_name, min_))]
+    mean_ =  ["средн"] + (list(bs.table_base[column_name[1:]].mean()))
+    max_min = [dict(zip(column_name, max_)), dict(zip(column_name, min_)),dict(zip(column_name, mean_))]
+
     print(max_min)
+
+    Great_volume_tab=bs.table_base.query('изм_Объема > 2')
+    Great_volume_tab.sort_values(by='изм_Объема',inplace=True)
+
+    print("Сортировка по объему \n",Great_volume_tab)
 
     bs.table_base = bs.table_base[-22::1]  # Таблица с шарпом
 
     # bs.table_base=pd.concat([bs.table_base,max_,min_],axis=1,)
 
     bs.table_base = bs.table_base.append(max_min, ignore_index=True, sort=False)
-    print(bs.table_base)
-
+    bs.table_base=bs.table_base.round(2)
+    print("Сортировка по Сортино 14 \n", bs.table_base)
     insert_excel(bs.table_base)  # Функция для вставки в текущий excel
-    print("-" * 20)
-    print(bs.table_base)
+
