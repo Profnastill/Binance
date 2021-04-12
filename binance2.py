@@ -109,7 +109,7 @@ def funct_1(tiker='USDT'):
 
 def test_cirkl():
     table=funct_1()
-    table=table["asset"].apply()
+
     table_a = table.copy()
     table_convert=table_a.to_json(orient="index")
     write_json(table_convert)

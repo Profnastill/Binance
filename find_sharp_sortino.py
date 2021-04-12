@@ -210,7 +210,7 @@ def candel_classificator(asset, daily_interval):
 
     model_rezult = (candlmodelSort.candles_model_analiz(select_candle))  # Запуск модуля проверки моделей
 
-    return pd.Series([time[0], str(list(select_candle['type'])), str(model_rezult), candle_volume_max])
+    return pd.Series([time[0], (list(select_candle['type'])), (model_rezult), candle_volume_max])
 
 
 def ask_input():
@@ -230,7 +230,7 @@ def ask_input():
         return ask_input()
 
 
-def insert_excel(table):
+def insert_excel(table,cell="A1"):
     """Функция для вставки в excel"""
     a = int(input("Введите нужен ли импорт в excel Yes=1 "))
     if a == 1:
@@ -240,12 +240,28 @@ def insert_excel(table):
             xlsheet = xlbook.sheets.add(name=date)
         except:
             xlsheet = xlbook.sheets(date)
-
-        xlsheet.range("A1").options(index=False).value = table
+        finally:
+            xlsheet.range(cell).options(index=False).value=table
+            print("вставка успешна")
+    else:
+        return
 
 
 def convert(time):
     return pd.Timestamp(time.timestamp(), unit='s')
+
+
+def fun_new_filter(data):
+    "Выборка по удару вверх"
+    for i in data:
+        if i=="Удар вверх":
+
+            return True
+        else:
+            print(data)
+            a=False
+    return a
+
 
 
 if __name__ == '__main__':
@@ -285,8 +301,13 @@ if __name__ == '__main__':
 
     Great_volume_tab=bs.table_base.query('изм_Объема > 2')
     Great_volume_tab.sort_values(by='изм_Объема',inplace=True)
+    select=Great_volume_tab['Тип свечи'].apply(fun_new_filter)
+    Sort_=Great_volume_tab[select]
 
-    print("Сортировка по объему \n",Great_volume_tab)
+
+
+
+
 
     bs.table_base = bs.table_base[-22::1]  # Таблица с шарпом
 
@@ -295,5 +316,12 @@ if __name__ == '__main__':
     bs.table_base = bs.table_base.append(max_min, ignore_index=True, sort=False)
     bs.table_base=bs.table_base.round(2)
     print("Сортировка по Сортино 14 \n", bs.table_base)
-    insert_excel(bs.table_base)  # Функция для вставки в текущий excel
+    bs.table_base[['Тип свечи', 'Сигнал_модель']] = bs.table_base[['Тип свечи', 'Сигнал_модель']].applymap(str)
+    insert_excel(bs.table_base,"A1")  # Функция для вставки в текущий excel
+    Great_volume_tab[['Тип свечи', 'Сигнал_модель']] = Great_volume_tab[['Тип свечи', 'Сигнал_модель']].applymap(str)#Преобразует в строку иначе не вставляется
+    Sort_[['Тип свечи', 'Сигнал_модель']] = Sort_[['Тип свечи', 'Сигнал_модель']].applymap(str)
 
+    print("---Сортировка по объему \n",Great_volume_tab)
+    insert_excel(Great_volume_tab,'P1')
+    print("---- Сортировка по удару сокола\n",Sort_)
+    insert_excel(Sort_,'A40')
