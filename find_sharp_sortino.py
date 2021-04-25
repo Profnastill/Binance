@@ -166,10 +166,11 @@ def candle_type_analiz(candle):
         candle_type = f"{color} доджи"
     elif (candle['size']> candle['atr'])& (candle['bottomShadow']<0.1* candle['scope']):
         candle_type = f"Удар вверх"
-    elif (candle['size'] < candle['atr']) & (candle['topShadow']<0.1* candle['scope']):
+    elif (candle['size'] > candle['atr']) & (candle['topShadow']<0.1* candle['scope']):
         candle_type = f"Удар вниз"
     else:
         candle_type = None
+    print("пррблема",candle_type)
     return candle_type
 
 
@@ -197,20 +198,23 @@ def candel_classificator(asset, daily_interval):
     candle['volume_mean'] = candle['Volume'].mean(axis=0)# Раассчитываем для полного выбора 10 дней
     print ("Запуск классификатора",asset)
 
+    if len(candle)>3:#Если вдруг таблица пустая пришла, не понятно правда почему она пустая может прийти
+        select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
 
-    select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
+        time = (select_candle['Open time'][0:1:1].values)
 
-    time = (select_candle['Open time'][0:1:1].values)
+        print ("свечи за после \n",select_candle)
 
+        select_candle['type'] = select_candle.apply(candle_type_analiz, axis=1)  # Определяем типы свечей для asset
 
-    select_candle['type'] = select_candle.apply(candle_type_analiz, axis=1)  # Определяем типы свечей для asset
+        select_candle['изм_Объема %'] = select_candle.apply(fun_volume, axis=1)  # Запуск функции изменения объема
+        candle_volume_max = select_candle['изм_Объема %'].max()
 
-    select_candle['изм_Объема %'] = select_candle.apply(fun_volume, axis=1)  # Запуск функции изменения объема
-    candle_volume_max = select_candle['изм_Объема %'].max()
+        model_rezult = (candlmodelSort.candles_model_analiz(select_candle))  # Запуск модуля проверки моделей
 
-    model_rezult = (candlmodelSort.candles_model_analiz(select_candle))  # Запуск модуля проверки моделей
-
-    return pd.Series([time[0], (list(select_candle['type'])), (model_rezult), candle_volume_max])
+        return pd.Series([time[0], (list(select_candle['type'])), (model_rezult), candle_volume_max])
+    else:
+        return pd.Series(None,None,None,None)
 
 
 def ask_input():
@@ -267,7 +271,7 @@ def fun_new_filter(data):
 if __name__ == '__main__':
     bs.table_base = ask_input()
     print(bs.table_base)
-    #bs.table_base = bs.table_base.loc[1:4]
+    #bs.table_base = bs.table_base.loc[1:10]
 
 
     bs.table_base[["Sharp_14", "Sortino_14"]] = bs.table_base["asset"].apply(
@@ -299,14 +303,10 @@ if __name__ == '__main__':
 
     print(max_min)
 
-    Great_volume_tab=bs.table_base.query('изм_Объема > 2')
+    Great_volume_tab=bs.table_base.query('изм_Объема > 2 &  Sortino_14 > 0 ')
     Great_volume_tab.sort_values(by='изм_Объема',inplace=True)
     select=Great_volume_tab['Тип свечи'].apply(fun_new_filter)
     Sort_=Great_volume_tab[select]
-
-
-
-
 
 
     bs.table_base = bs.table_base[-22::1]  # Таблица с шарпом
@@ -319,9 +319,14 @@ if __name__ == '__main__':
     bs.table_base[['Тип свечи', 'Сигнал_модель']] = bs.table_base[['Тип свечи', 'Сигнал_модель']].applymap(str)
     insert_excel(bs.table_base,"A1")  # Функция для вставки в текущий excel
     Great_volume_tab[['Тип свечи', 'Сигнал_модель']] = Great_volume_tab[['Тип свечи', 'Сигнал_модель']].applymap(str)#Преобразует в строку иначе не вставляется
-    Sort_[['Тип свечи', 'Сигнал_модель']] = Sort_[['Тип свечи', 'Сигнал_модель']].applymap(str)
 
-    print("---Сортировка по объему \n",Great_volume_tab)
-    insert_excel(Great_volume_tab,'P1')
-    print("---- Сортировка по удару сокола\n",Sort_)
-    insert_excel(Sort_,'A40')
+    if len(Great_volume_tab)>0:
+        '''Проверка если таблица пустая иначе ошибка'''
+        len_1 = (len(bs.table_base) + 5)
+        print (len_1)
+        print("---Сортировка по объему \n", Great_volume_tab)
+        insert_excel(Great_volume_tab, f'A{str(len_1)}')#{}
+        print("---- Сортировка по удару сокола\n", Sort_)
+        Sort_[['Тип свечи', 'Сигнал_модель']] = Sort_[['Тип свечи', 'Сигнал_модель']].applymap(str)
+        len_2=(len(Great_volume_tab)+5)
+        insert_excel(Sort_,f'A{str(len_1+len_2)}')

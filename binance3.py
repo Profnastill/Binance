@@ -16,7 +16,7 @@ import json
 import time
 
 
-pd.options.display.max_rows=10
+pd.options.display.max_rows=20
 pd.options.display.max_columns=10
 pd.options.display.expand_frame_repr = False
 urllib3.disable_warnings()
@@ -102,7 +102,8 @@ def fun_1(table):
     table=table.reset_index(drop=True)
     print (round(table,1))
     print (f"стоимость портфеля в долларах {round(suum_usdt)}$",
-    print (f"активы в долларах {volume_usdt[0].round()}"))
+    print (f"активы в долларах {volume_usdt[0].round()}$"))
+    print (f"Суммарно в долларах {round(suum_usdt+volume_usdt[0])}$")
     return table
 
 def write_json(data):

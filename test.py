@@ -79,3 +79,5 @@ print('rezult',list[-3::1])
 a='[б, б]'
 b='[б, к]'
 print( a==b)
+
+print (f"fromta{str(4)}")
