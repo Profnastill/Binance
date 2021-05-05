@@ -1,12 +1,11 @@
 # Сортино
-import binance3 as bs
 import datetime
+
 import pandas as pd
-import math
 import xlwings as xw
-import datetime
-import numpy as np
+
 import Test_otbor_candle as candlmodelSort
+import binance3 as bs
 
 pd.options.display.max_rows = 1000
 pd.options.display.max_columns = 20
@@ -164,20 +163,20 @@ def candle_type_analiz(candle):
         candle_type = f"{color} молот"
     elif 0.01 < candle['size'] / candle['scope'] < 0.03:
         candle_type = f"{color} доджи"
-    elif (candle['size']> candle['atr'])& (candle['bottomShadow']<0.1* candle['scope']):
+    elif (candle['size'] > candle['atr']) & (candle['bottomShadow'] < 0.1 * candle['scope']):
         candle_type = f"Удар вверх"
-    elif (candle['size'] > candle['atr']) & (candle['topShadow']<0.1* candle['scope']):
+    elif (candle['size'] > candle['atr']) & (candle['topShadow'] < 0.1 * candle['scope']):
         candle_type = f"Удар вниз"
     else:
         candle_type = None
-    print("пррблема",candle_type)
+        print("проблема", candle_type)
     return candle_type
 
 
 def fun_volume(data):
     '''Функция вычесления объем принимает свечу дневную'''
-    #data['изм Объема %'] = (data['Volume'] / data['volume_mean'] - 1) * 100
-    data['изм Объема %'] = (data['Volume'] / data['volume_mean'])# Черех стандартное отклонение
+    # data['изм Объема %'] = (data['Volume'] / data['volume_mean'] - 1) * 100
+    data['изм Объема %'] = (data['Volume'] / data['volume_mean'])  # Черех стандартное отклонение
     return data['изм Объема %']
 
 
@@ -188,6 +187,7 @@ def candel_classificator(asset, daily_interval):
     candle['scope'] = candle['High'] - candle['Low']  # Размах свечи
     candle['size'] = abs(candle['Open'] - candle['Close'])  # Тело свечи
     candle['relation'] = candle['size'] / candle['Close']  # Отношение цены открытия к цене закрытия
+    print(candle)
     candle['bottomShadow'] = candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
     candle['topShadow'] = candle['High'] - candle[["Open", "Close"]].values.max(1)
     candle['atr'] = (fun_atr(candle))  # Для указанной таблицы расчитываем ATR
@@ -195,15 +195,15 @@ def candel_classificator(asset, daily_interval):
 
     # print(asset, daily_interval)
     # print(candle)
-    candle['volume_mean'] = candle['Volume'].mean(axis=0)# Раассчитываем для полного выбора 10 дней
-    print ("Запуск классификатора",asset)
+    candle['volume_mean'] = candle['Volume'].mean(axis=0)  # Раассчитываем для полного выбора 10 дней
+    print("Запуск классификатора", asset)
 
-    if len(candle)>3:#Если вдруг таблица пустая пришла, не понятно правда почему она пустая может прийти
+    if len(candle) > 3:  # Если вдруг таблица пустая пришла, не понятно правда почему она пустая может прийти
         select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
 
         time = (select_candle['Open time'][0:1:1].values)
 
-        print ("свечи за после \n",select_candle)
+        print("свечи за после \n", select_candle)
 
         select_candle['type'] = select_candle.apply(candle_type_analiz, axis=1)  # Определяем типы свечей для asset
 
@@ -214,27 +214,34 @@ def candel_classificator(asset, daily_interval):
 
         return pd.Series([time[0], (list(select_candle['type'])), (model_rezult), candle_volume_max])
     else:
-        return pd.Series(None,None,None,None)
+        return pd.Series(None, None, None, None)
 
 
 def ask_input():
     """Функция ввода данных"""
     try:
-        a = int(input("Введите по какой таблице искать по портфелю 1 или по рынку 0 "))
+        a = int(input("Введите по какой таблице искать по портфелю 1; по рынку 0 ;по готовуму списку 2 "))
     except:
         "Ввели не числовые данные"
         ask_input()
     if a == 1:
         bs.table_base = bs.table
         return bs.table_base
-    elif a==0:
+    elif a == 0:
         bs.table_base = bs.table_base
         return bs.table_base
+    elif a == 2:
+        xlbook = xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
+        sheet = xlbook.sheets('Портфель')
+        bs.table_base = sheet.range('A1').options(pd.DataFrame, expand='table', index=False).value
+        print(bs.table_base)
+        return bs.table_base
+
     else:
         return ask_input()
 
 
-def insert_excel(table,cell="A1"):
+def insert_excel(table, cell="A1"):
     """Функция для вставки в excel"""
     a = int(input("Введите нужен ли импорт в excel Yes=1 "))
     if a == 1:
@@ -245,7 +252,7 @@ def insert_excel(table,cell="A1"):
         except:
             xlsheet = xlbook.sheets(date)
         finally:
-            xlsheet.range(cell).options(index=False).value=table
+            xlsheet.range(cell).options(index=False).value = table
             print("вставка успешна")
     else:
         return
@@ -258,21 +265,59 @@ def convert(time):
 def fun_new_filter(data):
     "Выборка по удару вверх"
     for i in data:
-        if i=="Удар вверх":
+        if i == "Удар вверх":
 
             return True
         else:
             print(data)
-            a=False
+            a = False
     return a
+
+
+def SMA(data, period):
+    if len(data) == 0:
+        raise Exception("Empty data")
+    if period <= 0:
+        raise Exception("Invalid period")
+
+    interm = 0
+    result = []
+    for i, v in enumerate(data):
+        interm += v
+        if (i+1) < period:
+            result.append(math.nan)
+        else:
+            result.append(interm/float(period))
+            interm -= data[i+1-period]
+    return result
+
+def EMA(data, period):
+    if period <= 1:
+        raise Exception("Invalid period")
+
+    sma = SMA(data, period)
+    multiplier = 2 / (float(period + 1))
+    result = []
+
+    for k, v in enumerate(sma):
+        if math.isnan(v):
+            result.append(math.nan)
+        else:
+            prev = result[k - 1]
+            if math.isnan(prev):
+                result.append(v)
+                continue
+            ema = (data[k] - prev) * multiplier + prev
+            result.append(ema)
+    return result
+
 
 
 
 if __name__ == '__main__':
     bs.table_base = ask_input()
     print(bs.table_base)
-    #bs.table_base = bs.table_base.loc[1:10]
-
+    # bs.table_base = bs.table_base.loc[1:10]
 
     bs.table_base[["Sharp_14", "Sortino_14"]] = bs.table_base["asset"].apply(
         lambda x: find_sharp_sortino(x, 14))  # Инициализация функции поиска
@@ -289,44 +334,46 @@ if __name__ == '__main__':
     print("-" * 10)
     print(bs.table_base)
 
-    bs.table_base.sort_values(by=["Sortino_14", "Sharp_14"], inplace=True)# Сортировка
-
-    bs.table_base.drop(["free", "locked"], axis='columns', inplace=True)
+    bs.table_base.sort_values(by=["Sortino_14", "Sharp_14"], inplace=True)  # Сортировка
+    try:
+        bs.table_base.drop(["free", "locked"], axis='columns', inplace=True)
+    except:
+        None
     bs.table_base.reset_index(drop=True, inplace=True)
     # print(bs.table_base)
     max_ = ["max"] + (
         list(bs.table_base[column_name[1:]].max()))  # Значения для определения дипазаона возможных значений
     print(max_)
     min_ = ["min"] + (list(bs.table_base[column_name[1:]].min()))
-    mean_ =  ["средн"] + (list(bs.table_base[column_name[1:]].mean()))
-    max_min = [dict(zip(column_name, max_)), dict(zip(column_name, min_)),dict(zip(column_name, mean_))]
+    mean_ = ["средн"] + (list(bs.table_base[column_name[1:]].mean()))
+    max_min = [dict(zip(column_name, max_)), dict(zip(column_name, min_)), dict(zip(column_name, mean_))]
 
     print(max_min)
 
-    Great_volume_tab=bs.table_base.query('изм_Объема > 2 &  Sortino_14 > 0 ')
-    Great_volume_tab.sort_values(by='изм_Объема',inplace=True)
-    select=Great_volume_tab['Тип свечи'].apply(fun_new_filter)
-    Sort_=Great_volume_tab[select]
-
+    Great_volume_tab = bs.table_base.query('изм_Объема > 2 &  Sortino_14 > 0 ')
+    Great_volume_tab.sort_values(by='изм_Объема', inplace=True)
+    select = Great_volume_tab['Тип свечи'].apply(fun_new_filter)
+    Sort_ = Great_volume_tab[select]
 
     bs.table_base = bs.table_base[-22::1]  # Таблица с шарпом
 
     # bs.table_base=pd.concat([bs.table_base,max_,min_],axis=1,)
 
     bs.table_base = bs.table_base.append(max_min, ignore_index=True, sort=False)
-    bs.table_base=bs.table_base.round(2)
+    bs.table_base = bs.table_base.round(2)
     print("Сортировка по Сортино 14 \n", bs.table_base)
     bs.table_base[['Тип свечи', 'Сигнал_модель']] = bs.table_base[['Тип свечи', 'Сигнал_модель']].applymap(str)
-    insert_excel(bs.table_base,"A1")  # Функция для вставки в текущий excel
-    Great_volume_tab[['Тип свечи', 'Сигнал_модель']] = Great_volume_tab[['Тип свечи', 'Сигнал_модель']].applymap(str)#Преобразует в строку иначе не вставляется
+    insert_excel(bs.table_base, "A1")  # Функция для вставки в текущий excel
+    Great_volume_tab[['Тип свечи', 'Сигнал_модель']] = Great_volume_tab[['Тип свечи', 'Сигнал_модель']].applymap(
+        str)  # Преобразует в строку иначе не вставляется
 
-    if len(Great_volume_tab)>0:
+    if len(Great_volume_tab) > 0:
         '''Проверка если таблица пустая иначе ошибка'''
         len_1 = (len(bs.table_base) + 5)
-        print (len_1)
+        print(len_1)
         print("---Сортировка по объему \n", Great_volume_tab)
-        insert_excel(Great_volume_tab, f'A{str(len_1)}')#{}
+        insert_excel(Great_volume_tab, f'A{str(len_1)}')  # {}
         print("---- Сортировка по удару сокола\n", Sort_)
         Sort_[['Тип свечи', 'Сигнал_модель']] = Sort_[['Тип свечи', 'Сигнал_модель']].applymap(str)
-        len_2=(len(Great_volume_tab)+5)
-        insert_excel(Sort_,f'A{str(len_1+len_2)}')
+        len_2 = (len(Great_volume_tab) + 5)
+        insert_excel(Sort_, f'A{str(len_1 + len_2)}')

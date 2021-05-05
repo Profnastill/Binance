@@ -4,6 +4,9 @@ import pandas as pd
 from binance.enums import *
 import xlwings as xl
 import keyboard
+import xlwings as xw
+from binance.websockets import BinanceSocketManager
+
 
 
 pd.options.display.max_rows=1000
@@ -54,7 +57,8 @@ def orders_info(asset,time):
     print(orders_table)
 
 
-def funct_by_sell(order_type,data=table):
+def funct_by_sell(order_type,data="NOW"):
+    print(order_type,data)
     ''' Функция продажи или покупки инструментов'''
     order = client.create_test_order(
     symbol='BNBUSDT',
@@ -63,6 +67,7 @@ def funct_by_sell(order_type,data=table):
     timeInForce=TIME_IN_FORCE_GTC,
     quantity=100,
     price='0.00001')
+    print (order)
 
 
 
@@ -105,8 +110,27 @@ def print_pressed_keys(e):
 
 
 
+def read_action_file():
+    xlbook = xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
+    sheet = xlbook.sheets('Портфель')
+    bs.table_base = sheet.range('A1').options(pd.DataFrame, expand='table', index=False).value
+    return bs.table_base
+
+def test_f(x):
+    r=x+str(1)
+    return r
+
+
+
 if __name__ == '__main__':
     #print(table["asset"] )
+    action_table=read_action_file()# читаем файл действий
+    action_table['curent_price']=action_table['asset'].apply(lambda x: client.get_avg_price(symbol=(x+'USDT')))
+    print(action_table.asset)
+    action_table.apply(lambda x: funct_by_sell(x.asset,"ooa"),axis=1)
 
-    keyboard.hook(print_pressed_keys)
-    keyboard.wait()
+
+
+
+    #keyboard.hook(print_pressed_keys)
+    #keyboard.wait()

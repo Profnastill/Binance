@@ -98,12 +98,14 @@ def fun_1(table):
     suum_usdt=table['USDT'].sum()
     table['% balance']=table['USDT']/(suum_usdt+volume_usdt)*100
     table['RUB_cost']=table['USDT'].apply(lambda x: x*usd_rub)
+    table=table.query('USDT > 1')
     #table['RUB_cost']=table['BNB'].apply(lambda x: x*bnb_rub)
     table=table.reset_index(drop=True)
     print (round(table,1))
     print (f"стоимость портфеля в долларах {round(suum_usdt)}$",
     print (f"активы в долларах {volume_usdt[0].round()}$"))
     print (f"Суммарно в долларах {round(suum_usdt+volume_usdt[0])}$")
+    print(f"Суммарно в рублях {round((suum_usdt + volume_usdt[0])*usd_rub)} Р")
     return table
 
 def write_json(data):

@@ -52,7 +52,6 @@ def candles_model_analiz(data):
 
 
 if __name__ == '__main__':
-
     massiv = []
     pd.options.display.max_rows = 1000
     for i in range(100):
