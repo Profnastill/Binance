@@ -81,3 +81,8 @@ b='[б, к]'
 print( a==b)
 
 print (f"fromta{str(4)}")
+
+n1=[1,2,3]
+n2=[4,5,6]
+for i in (n1,n2):
+    print (*i)

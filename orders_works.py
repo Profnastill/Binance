@@ -1,3 +1,4 @@
+'''модуль графического анализа '''
 import binance2 as bs
 import datetime
 import pandas as pd
