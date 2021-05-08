@@ -64,7 +64,7 @@ def fun_ewa_delta(asset, day_interval):
     fig.add_trace(go.Scatter(x=candel_tb['Open time'],y=candel_tb['signal'],name=asset))
     #fig=go.Figure(data=[go.Scatter(x=candel_tb['Open time'],y=candel_tb['signal'])])
     fig.update_layout(title=asset, yaxis_title='singnal')
-    fig.show()
+    #fig.show()
     time.sleep(2)
     #input_enter()#Запуск запроса на продолжение работы программы
     #grapf(candel_tb, asset)
@@ -106,5 +106,6 @@ if __name__ == '__main__':
     table = ask_input()
     #table=table[0:2]
     chooise_find()# Запуск выбора что таблиц поиска
+    fig.show()#Отображение графикав
     print('END')
     # table.apply(lambda x:take_data_candle(x.asset,10),axis=1)
