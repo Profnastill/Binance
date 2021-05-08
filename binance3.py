@@ -16,8 +16,8 @@ import json
 import time
 
 
-pd.options.display.max_rows=20
-pd.options.display.max_columns=10
+pd.options.display.max_rows=100
+pd.options.display.max_columns=100
 pd.options.display.expand_frame_repr = False
 urllib3.disable_warnings()
 
@@ -38,9 +38,6 @@ print("время сервера",current_time['serverTime'])
 time_dd_format=time.ctime(current_time['serverTime']/1000)
 print("время сервера",time_dd_format)
 
-
-
-
 #print (client)
 #client = Client(API_key, API_Secret, {"verify": False, "timeout": 20})
 try:
@@ -59,8 +56,20 @@ status = client.get_account_status()
 #balance = client.get_deposit_history
 
 balance=client.get_account()['balances']
+spot_margin=client.get_margin_account()
+spot_margin=pd.DataFrame(spot_margin["userAssets"])# данные с маржинального рынка
+spot_margin=spot_margin[['asset','free','netAsset']]
+
+spot_margin=spot_margin.rename(columns={'netAsset':'locked'})#Переименовали столбцы
+spot_margin['free']=spot_margin['locked'].apply(lambda x: float(x))
+spot_margin['free']=spot_margin['locked']
+print(spot_margin)
 #print(balance)
 table=pd.DataFrame(balance)
+
+table=pd.concat([table,spot_margin])
+print("--+"*10)
+print(table)
 table['free']=table['free'].apply(lambda x: float(x))
 
 selection_usdt = ((table.asset == "USDT"))
@@ -68,15 +77,19 @@ volume_usdt = table[selection_usdt]['free'].values
 print(volume_usdt)
 table = table[~selection_usdt]
 table_base=table.copy(deep=True)# Базовая таблица для работы модулей аналитики
-table=table.query('free > 0')
+table=table.query('free != 0')
 
 print("--"*10)
 print (table)
 
 
 def coint_info(asset):
-    client.get_all_coins_info()
+    spot_client=client.get_all_coins_info()#Данные спотового рынка
     client.get_al
+    spot_margin=client.get_margin_account()
+    table=pd.concat(spot_client,spot_margin,Ignor_index=True)
+    return table
+
 
 
 def func_2(asset):
@@ -96,7 +109,8 @@ def fun_1(table):
     table['USDT']=table['USDT']*table['free']
     table['BNB']=table['BNB']*table['free']
     suum_usdt=table['USDT'].sum()
-    table['% balance']=table['USDT']/(suum_usdt+volume_usdt)*100
+    print(suum_usdt,volume_usdt)
+    table['% balance']=table['USDT']/(suum_usdt+volume_usdt[1])*100
     table['RUB_cost']=table['USDT'].apply(lambda x: x*usd_rub)
     table=table.query('USDT > 1')
     #table['RUB_cost']=table['BNB'].apply(lambda x: x*bnb_rub)
@@ -123,18 +137,9 @@ def test_cirkl(table):
         table = fun_1(table)
         table_a=table.copy()
 
-
-def grapf(a):
-    fig = go.Figure(data=[go.Candlestick(x=a.day_set.index,
-                    open=a.day_set['Open'],
-                    high=a.day_set['High'],
-                    low=a.day_set['Low'],
-                    close=a.day_set['Close'])])
-    fig.show()
-
 table=fun_1(table)#Вызов базовой таблицы
 
-if __name__ == '__main__':
+if __name__ == '__main__1':
     test_cirkl(table)
 
 

@@ -29,6 +29,17 @@ time_delta = time_delta.total_seconds()
 
 start_str = time_delta
 
+balance=client.get_account()['balances']
+#print(balance)
+table=pd.DataFrame(balance)
+table['free']=table['free'].apply(lambda x: float(x))
+selection_usdt = ((table.asset == "USDT"))
+volume_usdt = table[selection_usdt]['free'].values#количество своободных средств
+print(volume_usdt)
+
+
+
+
 
 def orders_info(asset,time):
     '''
@@ -58,16 +69,18 @@ def orders_info(asset,time):
     print(orders_table)
 
 
-def funct_by_sell(order_type,data="NOW"):
-    print(order_type,data)
+def funct_by_sell(data):
     ''' Функция продажи или покупки инструментов'''
+    print("Запуски")
+    print(data)
+    print(data['curent_price']['price'])
     order = client.create_test_order(
-    symbol='BNBUSDT',
+    symbol=data['asset']+'USDT',
     side=SIDE_BUY,
     type=ORDER_TYPE_LIMIT,
     timeInForce=TIME_IN_FORCE_GTC,
-    quantity=100,
-    price='0.00001')
+    quantity=0.1,
+    price=str(data['curent_price']['price']))
     print (order)
 
 
@@ -80,7 +93,6 @@ def funct_click():
         a=int(input(f"выбор действия"))
     except:
         funct_click()
-
     if a==1:
         funct_by_sell("sell")
     elif a==2:
@@ -96,8 +108,6 @@ translate = {
     'up':' отпустил клавишу ',
     'o': 'нажал o'
 }
-
-
 
 def print_pressed_keys(e):
     print(
@@ -126,9 +136,11 @@ def test_f(x):
 if __name__ == '__main__':
     #print(table["asset"] )
     action_table=read_action_file()# читаем файл действий
+    print(action_table)
     action_table['curent_price']=action_table['asset'].apply(lambda x: client.get_avg_price(symbol=(x+'USDT')))
     print(action_table.asset)
-    action_table.apply(lambda x: funct_by_sell(x.asset,"ooa"),axis=1)
+    action_table.apply(funct_by_sell,axis=1)
+    #action_table.apply(lambda x: funct_by_sell(x.Action,"ooa"),axis=1)
 
 
 
