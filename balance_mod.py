@@ -125,21 +125,21 @@ def fun_1(table):
 def write_json(data):
     with open(r'C:\Users\Давид\PycharmProjects\Binance\data.json', 'w') as f:json.dump(data, f)
 
-
-
 def test_cirkl(table):
    # table=table["asset"].apply(func_2)
     table_a = table.copy()
     table_convert=table_a.to_json(orient="index")
     write_json(table_convert)
     while True:
+
         time.sleep(1)
         table = fun_1(table)
         table_a=table.copy()
 
+
 table=fun_1(table)#Вызов базовой таблицы
 
-if __name__ == '__main__1':
+if __name__ == '__main__':
     test_cirkl(table)
 
 

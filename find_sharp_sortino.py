@@ -5,7 +5,7 @@ import pandas as pd
 import xlwings as xw
 
 import Test_otbor_candle as candlmodelSort
-import binance3 as bs
+import balance_mod as bs
 
 pd.options.display.max_rows = 1000
 pd.options.display.max_columns = 20
@@ -123,7 +123,6 @@ def take_data_candle(asset, daily_interval):
     table_data["Open time"] = table_data["Open time"].apply(
         lambda x: datetime.datetime.fromtimestamp(int(x) / 1000).date())
 
-    print(table_data)
     return table_data
 
 
@@ -243,7 +242,10 @@ def ask_input():
 
 def insert_excel(table, cell="A1"):
     """Функция для вставки в excel"""
-    a = int(input("Введите нужен ли импорт в excel Yes=1 "))
+    try:
+        a = int(input("Введите нужен ли импорт в excel Yes=1 "))
+    except:
+        return insert_excel(table, cell)
     if a == 1:
         date = str(datetime.date.today())
         xlbook = xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
@@ -272,6 +274,13 @@ def fun_new_filter(data):
             print(data)
             a = False
     return a
+
+
+def transfer_data(data_frame):
+    """Функция трансфера pandas для yhoofin"""
+    list=data_frame['asset'].values.tolist()
+    print(list)
+    return str(list)
 
 
 
@@ -308,7 +317,6 @@ if __name__ == '__main__':
     min_ = ["min"] + (list(bs.table_base[column_name[1:]].min()))
     mean_ = ["средн"] + (list(bs.table_base[column_name[1:]].mean()))
     max_min = [dict(zip(column_name, max_)), dict(zip(column_name, min_)), dict(zip(column_name, mean_))]
-
     print(max_min)
 
     Great_volume_tab = bs.table_base.query('изм_Объема > 2 &  Sortino_14 > 0 ')
