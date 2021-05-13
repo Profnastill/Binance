@@ -1,9 +1,26 @@
+import random
+
 import pandas as pd
 
-df = pd.DataFrame({'ID':['1', '2', '3'], 'col_1': [7, 2, 7], 'col_2':[1, 4, 5],'col_3':[8,4,6]})
+df = pd.DataFrame({'ID':['1', '2', '3','4'], 'col_1': [7, 2, 7,3], 'col_2':[1, 4, 5,4],'col_3':[3,4,6,5]})
 mylist = ['a', 'b', 'c', 'd', 'e', 'f']
+df2=df.copy(deep=True)
+df2['col_3']=df2['col_3'].fillna(value=random.randint(0,3))
+print ("новая табл df2")
+print(df2)
 
-print (df)
+def ads():
+    print("table  df \n",df)
+    new=df2['col_3'].shift(1)-df['col_3']
+    print("new \n",new)
+    return new
+
+tab=ads()
+
+print ("таблица срез \n",df[-2::1])
+
+print("-----------")
+print ("as",df.loc[1])
 def get_sublist(sta,end):
     return mylist[sta:end+1]
 

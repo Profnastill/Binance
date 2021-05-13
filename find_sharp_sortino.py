@@ -222,7 +222,7 @@ def ask_input():
         a = int(input("Введите по какой таблице искать по портфелю 1; по рынку 0 ;по готовуму списку 2 "))
     except:
         "Ввели не числовые данные"
-        ask_input()
+        a=ask_input()
     if a == 1:
         bs.table_base = bs.table
         return bs.table_base

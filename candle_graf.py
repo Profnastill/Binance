@@ -40,14 +40,15 @@ fig = go.Figure()  # Создаем график
 
 columns = ['asset', 'signal']
 index = [0, 0]
-last_signal = pd.DataFrame(columns=columns)  # Пустая таблица для добавления в нее данных
+last_signal = pd.DataFrame(columns=columns,index = [0, 0])  # Пустая таблица для добавления в нее данных
 
+#btc_table= pd.DataFrame(columns=columns)#Пустая таблица для хранения данных по биткоину чтобы использовать их как фильтр
 
 # print(last_signal)
 
 
-def fun_ewa_delta(asset, day_interval):
-    """Функция построения эксп скол средней."""
+def fun_graf_delta(asset, day_interval):
+    """Функция построения эксп скол средней. и нахождение сигнала покупки и продажт"""
     n1 = [8, 16, 32]  # Коэффициент количество дней для сколь средней
     n2 = [24, 48, 96]
     candel_tb = take_data_candle(asset, day_interval)  # Получаем набор свечей
@@ -57,6 +58,7 @@ def fun_ewa_delta(asset, day_interval):
 
     if len(candel_tb) < 26:  # Защита если таблица вдруг пустая пришла
         candel_tb = dop_data.yhoo_data_taker(asset, day_interval)  # Попытка получить набор свечей с Yhoo
+        print(candel_tb[:5])
         if len(candel_tb) < 30:
             return
 
@@ -78,16 +80,49 @@ def fun_ewa_delta(asset, day_interval):
         candel_tb['signal'] += wk * candel_tb['uk']  # получения сигнала
         candel_tb['asset'] = asset
         print("[Ход выполнения", i)
-
     # print(candel_tb)
 
-    candel_tb['signal'] = candel_tb['signal'].round(2)
-    global last_signal
-    last_signal = pd.concat([last_signal, candel_tb[['asset', 'signal']][-1:]], ignore_index=True)
-    fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset))
-    fig.update_layout(title=asset, yaxis_title='singnal')
 
+    candel_tb['signal'] = candel_tb['signal'].round(2)
+    print(candel_tb[-2::1])
+
+    global last_signal
+    last_signal = pd.concat([last_signal, candel_tb[['asset', 'signal']][-1:]], ignore_index=True)#Таблица имя инструмента/сигнал для заполнения
+    candel_tb['test sect']=filter_signal(candel_tb[['asset', 'signal']][-2::1])#Запускаем функцию рассматриваем только два дня
+
+    fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset))# Обновление для графиков
+    fig.update_layout(title=asset, yaxis_title='singnal')
     return last_signal
+
+def filter_signal(signal):
+
+    """Фильтр по коэффициенту signal. Принимает название инструмента и таблицу сигналов """
+    test_p=None
+    signal=signal.reset_index(drop='index')
+
+    print("signal insert table \n", signal)
+    global btc_table
+    if signal['asset'].values[0]=='BTC':#Сохранения данных для Битка для использования его как фильтр
+        btc_table=signal.copy(deep=True).reset_index()
+        #pd.concat([btc_table,last_signal],ignore_index=True)
+        btc_table.reset_index(inplace=True)
+        print("BTC table \n", signal,)
+    else:
+        print("BTC table \n",btc_table)
+        print(btc_table.iloc[[1]])
+        x4=btc_table['signal'].iloc[1]#последний
+        x3=btc_table['signal'].iloc[0]
+        x1=signal['signal'].iloc[0]
+        x2=signal['signal'].iloc[1]#последний
+        if x1<x3 and x2>x4:
+            test_p="прок UP"
+        elif x1>x3 and x2<x4:
+            test_p="прок down"
+        else:
+            test_p= None
+        table['filter']=test_p
+    return test_p
+
 
 
 def input_enter():
@@ -109,7 +144,7 @@ def grapf(table, assetname):
                                          close=table['Close']),
                           go.Scatter(x=table['Open time'], y=table['EWA1-8'], line=dict(color='red', width=1)),
                           go.Scatter(x=table['Open time'], y=table['EWA2-24'], line=dict(color='orange', width=1))])
-    fig.update_layout(title=assetname, yaxis_title='price')
+    fig.update_layout(title=assetname, yaxis_title='price',paper_bgcolor='rgb(141,238,238)',linecolor = '#636363')
     fig.show()
     time.sleep(5)
 
@@ -118,11 +153,12 @@ def chooise_find(day):
     """Выбор что найти хотим"""
     inp = input("выберите что ищем:  1- сигнал 2-график")
     if int(inp) == 1:
-        table.apply(lambda x: fun_ewa_delta(x.asset, day), axis=1)
+        table.apply(lambda x: fun_graf_delta(x.asset, day), axis=1)
     elif int(inp) == 2:
         table.apply(lambda x: fun_ewa(x.asset, day), axis=1)
     else:
         return chooise_find()
+
 
 
 def balancer(last_signal):
@@ -157,10 +193,11 @@ def balancer(last_signal):
 
 if __name__ == '__main__':
     table = ask_input()
-    # table = table[0:4]
+    table = table[0:2]
     # base_table=pd.DataFrame({'asset':['BTC','EOS','BNB']})
+    #ВНИМАНИЕ! строкой ниже Биток должен быть всегда первыми иначе фильтр работать не будет
     base_table = pd.DataFrame({'asset': ['BTC', 'DX-Y.NYB', "GOLD", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
-    table = pd.concat([table, base_table], ignore_index=True)  # Добавляем базовые инструменты для сравнения
+    table = pd.concat([ base_table,table], ignore_index=True)  # Добавляем базовые инструменты для сравнения
     table.drop_duplicates(subset=['asset'], inplace=True)  # Удаляем дублирования инструментов
     print('Таблица c позициями \n', table)
     day = 360  # Дни поиска
