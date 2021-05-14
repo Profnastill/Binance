@@ -87,19 +87,19 @@ def fun_graf_delta(asset, day_interval):
     print(candel_tb[-2::1])
 
     global last_signal
-    last_signal = pd.concat([last_signal, candel_tb[['asset', 'signal']][-1:]], ignore_index=True)#Таблица имя инструмента/сигнал для заполнения
-    candel_tb['test sect']=filter_signal(candel_tb[['asset', 'signal']][-2::1])#Запускаем функцию рассматриваем только два дня
+    candel_tb['Удар']=filter_signal(candel_tb[['asset', 'signal']][-2::1])#Запускаем функцию рассматриваем только два дня
+    print("============= \n",candel_tb[['asset', 'signal']][-1:])
+    last_signal = pd.concat([last_signal, candel_tb[['asset', 'signal','Удар']][-1:]], ignore_index=True)#Таблица имя инструмента/сигнал для заполнения
+
 
     fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset))# Обновление для графиков
     fig.update_layout(title=asset, yaxis_title='singnal')
     return last_signal
 
 def filter_signal(signal):
-
     """Фильтр по коэффициенту signal. Принимает название инструмента и таблицу сигналов """
     test_p=None
     signal=signal.reset_index(drop='index')
-
     print("signal insert table \n", signal)
     global btc_table
     if signal['asset'].values[0]=='BTC':#Сохранения данных для Битка для использования его как фильтр
@@ -107,6 +107,8 @@ def filter_signal(signal):
         #pd.concat([btc_table,last_signal],ignore_index=True)
         btc_table.reset_index(inplace=True)
         print("BTC table \n", signal,)
+        test_p=0
+        return
     else:
         print("BTC table \n",btc_table)
         print(btc_table.iloc[[1]])
@@ -115,12 +117,11 @@ def filter_signal(signal):
         x1=signal['signal'].iloc[0]
         x2=signal['signal'].iloc[1]#последний
         if x1<x3 and x2>x4:
-            test_p="прок UP"
+            test_p="UP"
         elif x1>x3 and x2<x4:
-            test_p="прок down"
+            test_p="Down"
         else:
-            test_p= None
-        table['filter']=test_p
+            test_p=None
     return test_p
 
 
@@ -193,7 +194,7 @@ def balancer(last_signal):
 
 if __name__ == '__main__':
     table = ask_input()
-    table = table[0:2]
+    tableable = table[0:2]
     # base_table=pd.DataFrame({'asset':['BTC','EOS','BNB']})
     #ВНИМАНИЕ! строкой ниже Биток должен быть всегда первыми иначе фильтр работать не будет
     base_table = pd.DataFrame({'asset': ['BTC', 'DX-Y.NYB', "GOLD", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
@@ -202,14 +203,20 @@ if __name__ == '__main__':
     print('Таблица c позициями \n', table)
     day = 360  # Дни поиска
     chooise_find(day)  # Запуск выбора что таблиц поиска
-
+    last_signal.dropna(how='all',inplace=True)
+    print('Таблица c найденными значениями  \n', last_signal)
     last_signal.sort_values(by=['signal'], inplace=True)
-    # print('\n Таблица с коэффициентами \n', last_uk.reset_index(inplace=True,drop=True))
-    new_portf_balance = balancer(last_signal)  # Запуск балансера для портфеля
-    insert_excel(new_portf_balance, "Q1")
-    last_signal = last_signal.query('signal > 0.5')
+    select_2=last_signal.query('(Удар == "UP") | (Удар == "Down")')
+    print('Таблица c найденными значениями  \n', select_2)
+    insert_excel(select_2.reset_index(), "AD1")
 
-    insert_excel(last_signal.reset_index(), "L1")  # Только двадцать лучших
+    new_portf_balance = balancer(last_signal)  # Запуск балансера для портфеля
+    print("Вставить данные по портфелю?")
+    insert_excel(new_portf_balance, "Q1")
+    select_1= last_signal.query('signal > 0.5')
+    insert_excel(select_1.reset_index(), "L1")
+
+
     fig.show()  # Отображение графикав
     transfer_data(last_signal)  # Данные для yhooo
     print('END')
