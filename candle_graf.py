@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 
 import balance_mod
 import dop_data
+import find_sharp_sortino as ssf
 # import dash
 from find_sharp_sortino import take_data_candle, ask_input, insert_excel, transfer_data
 
@@ -40,9 +41,10 @@ fig = go.Figure()  # Создаем график
 
 columns = ['asset', 'signal']
 index = [0, 0]
-last_signal = pd.DataFrame(columns=columns,index = [0, 0])  # Пустая таблица для добавления в нее данных
+last_signal = pd.DataFrame(columns=columns, index=[0, 0])  # Пустая таблица для добавления в нее данных
 
-#btc_table= pd.DataFrame(columns=columns)#Пустая таблица для хранения данных по биткоину чтобы использовать их как фильтр
+
+# btc_table= pd.DataFrame(columns=columns)#Пустая таблица для хранения данных по биткоину чтобы использовать их как фильтр
 
 # print(last_signal)
 
@@ -82,48 +84,46 @@ def fun_graf_delta(asset, day_interval):
         print("[Ход выполнения", i)
     # print(candel_tb)
 
-
     candel_tb['signal'] = candel_tb['signal'].round(2)
     print(candel_tb[-2::1])
 
     global last_signal
-    candel_tb['Удар']=filter_signal(candel_tb[['asset', 'signal']][-2::1])#Запускаем функцию рассматриваем только два дня
-    print("============= \n",candel_tb[['asset', 'signal']][-1:])
-    last_signal = pd.concat([last_signal, candel_tb[['asset', 'signal','Удар']][-1:]], ignore_index=True)#Таблица имя инструмента/сигнал для заполнения
+    candel_tb['Удар'] = filter_signal(
+        candel_tb[['asset', 'signal']][-2::1])  # Запускаем функцию рассматриваем только два дня
+    print("============= \n", candel_tb[['asset', 'signal']][-1:])
+    last_signal = pd.concat([last_signal, candel_tb[['asset', 'signal', 'Удар']][-1:]],
+                            ignore_index=True)  # Таблица имя инструмента/сигнал для заполнения
 
-
-    fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset))# Обновление для графиков
+    fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset))  # Обновление для графиков
     fig.update_layout(title=asset, yaxis_title='singnal')
     return last_signal
 
+
 def filter_signal(signal):
     """Фильтр по коэффициенту signal. Принимает название инструмента и таблицу сигналов """
-    test_p=None
-    signal=signal.reset_index(drop='index')
-    print("signal insert table \n", signal)
+    test_p = None
+    signal = signal.reset_index(drop='index')
+    # print("signal insert table \n", signal)
     global btc_table
-    if signal['asset'].values[0]=='BTC':#Сохранения данных для Битка для использования его как фильтр
-        btc_table=signal.copy(deep=True).reset_index()
-        #pd.concat([btc_table,last_signal],ignore_index=True)
+    if signal['asset'].values[0] == 'BTC':  # Сохранения данных для Битка для использования его как фильтр
+        btc_table = signal.copy(deep=True).reset_index()
+
         btc_table.reset_index(inplace=True)
-        print("BTC table \n", signal,)
-        test_p=0
+        print("BTC table \n", signal, )
+        test_p = 0
         return
     else:
-        print("BTC table \n",btc_table)
-        print(btc_table.iloc[[1]])
-        x4=btc_table['signal'].iloc[1]#последний
-        x3=btc_table['signal'].iloc[0]
-        x1=signal['signal'].iloc[0]
-        x2=signal['signal'].iloc[1]#последний
-        if x1<x3 and x2>x4:
-            test_p="UP"
-        elif x1>x3 and x2<x4:
-            test_p="Down"
+        x4 = btc_table['signal'].iloc[1]  # последний
+        x3 = btc_table['signal'].iloc[0]
+        x1 = signal['signal'].iloc[0]
+        x2 = signal['signal'].iloc[1]  # последний
+        if x1 < x3 and x2 > x4:
+            test_p = "UP"
+        elif x1 > x3 and x2 < x4:
+            test_p = "Down"
         else:
-            test_p=None
+            test_p = None
     return test_p
-
 
 
 def input_enter():
@@ -145,7 +145,7 @@ def grapf(table, assetname):
                                          close=table['Close']),
                           go.Scatter(x=table['Open time'], y=table['EWA1-8'], line=dict(color='red', width=1)),
                           go.Scatter(x=table['Open time'], y=table['EWA2-24'], line=dict(color='orange', width=1))])
-    fig.update_layout(title=assetname, yaxis_title='price',paper_bgcolor='rgb(141,238,238)',linecolor = '#636363')
+    fig.update_layout(title=assetname, yaxis_title='price', paper_bgcolor='rgb(141,238,238)', linecolor='#636363')
     fig.show()
     time.sleep(5)
 
@@ -161,63 +161,73 @@ def chooise_find(day):
         return chooise_find()
 
 
-
 def balancer(last_signal):
     """Функция балансировки портфеля"""
     last_signal.reset_index(inplace=True, drop=True)
-    # last_signal['signal']=last_signal.query('signal<0.4')
 
     print("Таблица требуемая 1 \n", last_signal)
     balance_portf = last_signal.query(
         '(asset != "BTC") & (asset != "DX-Y.NYB") & (asset != "GOLD") & (asset != "BZ=F") & (asset != "RUB=X")')  # Таблица чисто по портфелю без добавленных выше элементов
-    # balance_portf = last_uk.query('asset != "BTC"')
     balance_portf = balance_portf.reset_index(drop=True)
     print("Таблица требуемая \n", balance_portf)
     summa_tb_1 = balance_portf['signal'].sum()
     print("сумма", summa_tb_1)
     balance_portf["% balance"] = balance_portf['signal'] / summa_tb_1  # необходимое количество в процентах в портфеле.
-
     portf_table_current = balance_mod.table  # Вызов текущей таблицы в портфеле
-    summa_tb_2 = portf_table_current['USDT'].sum()  # Сумма по таблице с текущим портфелем
+    volume_usdt = balance_mod.volume_usdt
+    portf_table_current = portf_table_current.append({'asset': "USD", 'USDT': volume_usdt[0]},
+                                                     ignore_index=True)  # Добавили строку с объемом текущих наличных долларов
+    summa_portf_cost = portf_table_current['USDT'].sum()  # Сумма по таблице с текущим портфелем
+    sred = portf_table_current['USDT'].mean()  # Среднее значение
     portf_table_current = portf_table_current.merge(balance_portf, how='left', on='asset')
     print("Текущий баланс \n", portf_table_current)
-    # portf_table_current['free'] = portf_table_current['free'].apply(float)
-    portf_table_current["USDT_new"] = summa_tb_2 * portf_table_current[
-        "signal"] / summa_tb_1  # Значения которые должны быть на самом деле
+
+    portf_table_current[["Sharp_14", "Sortino_14"]] = portf_table_current["asset"].apply(
+        lambda x: ssf.find_sharp_sortino(x, 14))  # Инициализация функции поиска
+
+    if sred < 0.5:  # Страховка портфеля
+        USD_new = summa_portf_cost * 0.4  # оставить 40% денег в кеше
+        portf_table_current["USDT_new"] = summa_portf_cost * portf_table_current[
+            "signal"] / summa_tb_1 - USD_new  # Значения которые должны быть на самом деле
+        portf_table_current.loc[portf_table_current['asset'] == "USD", "USDT_new"] = USD_new
+
+    else:
+        portf_table_current["USDT_new"] = summa_portf_cost * portf_table_current[
+            "signal"] / summa_tb_1  # Значения которые должны быть на самом деле
+        portf_table_current.loc[portf_table_current['asset'] == "USD", "USDT_new"] = 0
 
     portf_table_current['by/cell'] = pow(portf_table_current['USDT_new'] - portf_table_current['USDT'],
                                          1)  # Количество долларов на которое надо продать или купить в портфель
 
     print("Необходимая действия \n", portf_table_current)
+    a=input("повторить балансировку")
     return portf_table_current
 
 
 if __name__ == '__main__':
     table = ask_input()
-    tableable = table[0:2]
-    # base_table=pd.DataFrame({'asset':['BTC','EOS','BNB']})
-    #ВНИМАНИЕ! строкой ниже Биток должен быть всегда первыми иначе фильтр работать не будет
+    # tableable = table[0:2]
+    # ВНИМАНИЕ! строкой ниже Биток должен быть всегда первыми иначе фильтр работать не будет
     base_table = pd.DataFrame({'asset': ['BTC', 'DX-Y.NYB', "GOLD", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
-    table = pd.concat([ base_table,table], ignore_index=True)  # Добавляем базовые инструменты для сравнения
+    table = pd.concat([base_table, table], ignore_index=True)  # Добавляем базовые инструменты для сравнения
     table.drop_duplicates(subset=['asset'], inplace=True)  # Удаляем дублирования инструментов
     print('Таблица c позициями \n', table)
     day = 360  # Дни поиска
     chooise_find(day)  # Запуск выбора что таблиц поиска
-    last_signal.dropna(how='all',inplace=True)
-    print('Таблица c найденными значениями  \n', last_signal)
+    last_signal.dropna(how='all', inplace=True)
     last_signal.sort_values(by=['signal'], inplace=True)
-    select_2=last_signal.query('(Удар == "UP") | (Удар == "Down")')
+    select_2 = last_signal.query('(Удар == "UP") | (Удар == "Down")')
     print('Таблица c найденными значениями  \n', select_2)
-    insert_excel(select_2.reset_index(), "AD1")
+    fig.show()  # Отображение графикав
 
+    insert_excel(select_2.reset_index(), "AF1")
     new_portf_balance = balancer(last_signal)  # Запуск балансера для портфеля
     print("Вставить данные по портфелю?")
     insert_excel(new_portf_balance, "Q1")
-    select_1= last_signal.query('signal > 0.5')
+    select_1 = last_signal.query('signal > 0.5')
     insert_excel(select_1.reset_index(), "L1")
 
 
-    fig.show()  # Отображение графикав
     transfer_data(last_signal)  # Данные для yhooo
     print('END')
     # table.apply(lambda x:take_data_candle(x.asset,10),axis=1)
