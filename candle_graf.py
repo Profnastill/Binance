@@ -2,12 +2,13 @@
 import math
 # import stocker
 import time
+from datetime import date
 
 import pandas as pd
 import plotly.graph_objects as go
 
 import balance_mod
-import dop_data
+import get_data_Yahoo
 import find_sharp_sortino as ssf
 # import dash
 from find_sharp_sortino import take_data_candle, ask_input, insert_excel, transfer_data
@@ -27,6 +28,16 @@ def fun_ewa(asset, day_interval):
     n1 = [8, 16, 32]  # Коэффициент количество дней для сколь средней
     n2 = [24, 48, 96]
     candel_tb = take_data_candle(asset, day_interval)  # Получаем набор свечей
+    # Запускаем попытку поиска на YHOO
+    print(candel_tb[:5])
+    # candel_tb['SMA1']= candel_tb.rolling(window=n1).mean()# Скользящая средняя
+
+    if len(candel_tb) < 26:  # Защита если таблица вдруг пустая пришла
+        candel_tb = get_data_Yahoo.yhoo_data_taker(asset, day_interval)  # Попытка получить набор свечей с Yhoo
+        print(candel_tb[:5])
+        if len(candel_tb) < 30:
+            return
+
     # candel_tb['SMA1']= candel_tb.rolling(window=n1).mean()# Скользящая средняя
     for i in range(len(n1)):
         name_1 = str(n1[i])
@@ -38,7 +49,6 @@ def fun_ewa(asset, day_interval):
 
 
 fig = go.Figure()  # Создаем график
-
 columns = ['asset', 'signal']
 index = [0, 0]
 last_signal = pd.DataFrame(columns=columns, index=[0, 0])  # Пустая таблица для добавления в нее данных
@@ -49,17 +59,20 @@ last_signal = pd.DataFrame(columns=columns, index=[0, 0])  # Пустая таб
 # print(last_signal)
 
 
+
+
 def fun_graf_delta(asset, day_interval):
     """Функция построения эксп скол средней. и нахождение сигнала покупки и продажт"""
-    n1 = [8, 16, 32]  # Коэффициент количество дней для сколь средней
-    n2 = [24, 48, 96]
+    n=8
+    n1 = [n, n*2, n*4]  # Коэффициент количество дней для сколь средней
+    n2 = [n*3, n*6, n*12]
     candel_tb = take_data_candle(asset, day_interval)  # Получаем набор свечей
     # Запускаем попытку поиска на YHOO
     print(candel_tb[:5])
     # candel_tb['SMA1']= candel_tb.rolling(window=n1).mean()# Скользящая средняя
 
     if len(candel_tb) < 26:  # Защита если таблица вдруг пустая пришла
-        candel_tb = dop_data.yhoo_data_taker(asset, day_interval)  # Попытка получить набор свечей с Yhoo
+        candel_tb = get_data_Yahoo.yhoo_data_taker(asset, day_interval)  # Попытка получить набор свечей с Yhoo
         print(candel_tb[:5])
         if len(candel_tb) < 30:
             return
@@ -94,8 +107,8 @@ def fun_graf_delta(asset, day_interval):
     last_signal = pd.concat([last_signal, candel_tb[['asset', 'signal', 'Удар']][-1:]],
                             ignore_index=True)  # Таблица имя инструмента/сигнал для заполнения
 
-    fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset))  # Обновление для графиков
-    fig.update_layout(title=asset, yaxis_title='singnal')
+    fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset,mode='lines'))  # Обновление для графиков
+    fig.update_layout(title="График_импульса", yaxis_title='singnal')
     return last_signal
 
 
@@ -107,7 +120,6 @@ def filter_signal(signal):
     global btc_table
     if signal['asset'].values[0] == 'BTC':  # Сохранения данных для Битка для использования его как фильтр
         btc_table = signal.copy(deep=True).reset_index()
-
         btc_table.reset_index(inplace=True)
         print("BTC table \n", signal, )
         test_p = 0
@@ -138,6 +150,7 @@ def grapf(table, assetname):
     """Функция построения графиков для необходимых инструментов"""
     print('------------' * 10)
     print(table)
+    #layot=(paper_bgcolor='rgb(141,238,238)', linecolor='#636363']
     fig = go.Figure(data=[go.Candlestick(x=table['Open time'],
                                          open=table['Open'],
                                          high=table['High'],
@@ -145,7 +158,8 @@ def grapf(table, assetname):
                                          close=table['Close']),
                           go.Scatter(x=table['Open time'], y=table['EWA1-8'], line=dict(color='red', width=1)),
                           go.Scatter(x=table['Open time'], y=table['EWA2-24'], line=dict(color='orange', width=1))])
-    fig.update_layout(title=assetname, yaxis_title='price', paper_bgcolor='rgb(141,238,238)', linecolor='#636363')
+    fig.update_layout(title=assetname, yaxis_title='price')
+    #
     fig.show()
     time.sleep(5)
 
@@ -158,7 +172,7 @@ def chooise_find(day):
     elif int(inp) == 2:
         table.apply(lambda x: fun_ewa(x.asset, day), axis=1)
     else:
-        return chooise_find()
+        return chooise_find(day)
 
 
 def balancer(last_signal):
@@ -199,9 +213,22 @@ def balancer(last_signal):
     portf_table_current['by/cell'] = pow(portf_table_current['USDT_new'] - portf_table_current['USDT'],
                                          1)  # Количество долларов на которое надо продать или купить в портфель
 
-    print("Необходимая действия \n", portf_table_current)
-    a=input("повторить балансировку")
+    print("Необходимые действия \n", portf_table_current)
+    a = input("повторить балансировку")
+    if a=="1":
+        return balancer(last_signal)
     return portf_table_current
+
+def insert_csv(table, name:str):
+    """Сохдание файла базы"""
+    tcur_time=date.today()
+    tcur_time=tcur_time.strftime("%m%d%Y")
+    print("время",tcur_time)
+    # table=table['asset']
+    table['asset']=table['asset']+"/USD"
+    print("время", table)
+    table.to_csv(f'B:/download/{str(tcur_time)+name}.csv', index_label='asset')
+    return
 
 
 if __name__ == '__main__':
@@ -222,12 +249,15 @@ if __name__ == '__main__':
 
     insert_excel(select_2.reset_index(), "AF1")
     new_portf_balance = balancer(last_signal)  # Запуск балансера для портфеля
+    insert_csv(new_portf_balance, "port_balance")#Вставка в csv
     print("Вставить данные по портфелю?")
     insert_excel(new_portf_balance, "Q1")
+
     select_1 = last_signal.query('signal > 0.5')
+    insert_csv(select_1,"all_find_signal")
+
     insert_excel(select_1.reset_index(), "L1")
 
-
-    transfer_data(last_signal)  # Данные для yhooo
+    transfer_data(last_signal)  # Данные в список  для yhooo
     print('END')
     # table.apply(lambda x:take_data_candle(x.asset,10),axis=1)

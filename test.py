@@ -1,5 +1,6 @@
 import random
-
+from binance import client
+client.Client
 import pandas as pd
 
 df = pd.DataFrame({'ID':['1', '2', '3','4'], 'col_1': [7, 2, 7,3], 'col_2':[1, 4, 5,4],'col_3':[3,4,6,5]})
@@ -103,3 +104,5 @@ n1=[1,2,3]
 n2=[4,5,6]
 for i in (n1,n2):
     print (*i)
+
+print( [1,2,3]*3)

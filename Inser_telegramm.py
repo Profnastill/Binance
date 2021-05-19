@@ -5,6 +5,7 @@ It echoes any incoming text messages.
 """
 
 import logging
+import candle_graf
 
 from aiogram import Bot, Dispatcher, executor, types
 

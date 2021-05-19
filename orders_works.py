@@ -1,11 +1,13 @@
 '''модуль графического анализа '''
-import binance2 as bs
+import orders_works as bs
 import datetime
 import pandas as pd
+import balance_mod
 from binance.enums import *
 import xlwings as xl
 import keyboard
 import xlwings as xw
+import find_sharp_sortino as ssf
 from binance.websockets import BinanceSocketManager
 
 
@@ -38,7 +40,49 @@ volume_usdt = table[selection_usdt]['free'].values#количество своо
 print(volume_usdt)
 
 
+def balancer(last_signal):
+    """Функция балансировки портфеля"""
+    last_signal.reset_index(inplace=True, drop=True)
 
+    print("Таблица требуемая 1 \n", last_signal)
+    balance_portf = last_signal.query(
+        '(asset != "BTC") & (asset != "DX-Y.NYB") & (asset != "GOLD") & (asset != "BZ=F") & (asset != "RUB=X")')  # Таблица чисто по портфелю без добавленных выше элементов
+    balance_portf = balance_portf.reset_index(drop=True)
+    print("Таблица требуемая \n", balance_portf)
+    summa_tb_1 = balance_portf['signal'].sum()
+    print("сумма", summa_tb_1)
+    balance_portf["% balance"] = balance_portf['signal'] / summa_tb_1  # необходимое количество в процентах в портфеле.
+    portf_table_current = balance_mod.table  # Вызов текущей таблицы в портфеле
+    volume_usdt = balance_mod.volume_usdt
+    portf_table_current = portf_table_current.append({'asset': "USD", 'USDT': volume_usdt[0]},
+                                                     ignore_index=True)  # Добавили строку с объемом текущих наличных долларов
+    summa_portf_cost = portf_table_current['USDT'].sum()  # Сумма по таблице с текущим портфелем
+    sred = portf_table_current['USDT'].mean()  # Среднее значение
+    portf_table_current = portf_table_current.merge(balance_portf, how='left', on='asset')
+    print("Текущий баланс \n", portf_table_current)
+
+    portf_table_current[["Sharp_14", "Sortino_14"]] = portf_table_current["asset"].apply(
+        lambda x: ssf.find_sharp_sortino(x, 14))  # Инициализация функции поиска
+
+    if sred < 0.5:  # Страховка портфеля
+        USD_new = summa_portf_cost * 0.4  # оставить 40% денег в кеше
+        portf_table_current["USDT_new"] = summa_portf_cost * portf_table_current[
+            "signal"] / summa_tb_1 - USD_new  # Значения которые должны быть на самом деле
+        portf_table_current.loc[portf_table_current['asset'] == "USD", "USDT_new"] = USD_new
+
+    else:
+        portf_table_current["USDT_new"] = summa_portf_cost * portf_table_current[
+            "signal"] / summa_tb_1  # Значения которые должны быть на самом деле
+        portf_table_current.loc[portf_table_current['asset'] == "USD", "USDT_new"] = 0
+
+    portf_table_current['by/cell'] = pow(portf_table_current['USDT_new'] - portf_table_current['USDT'],
+                                         1)  # Количество долларов на которое надо продать или купить в портфель
+
+    print("Необходимые действия \n", portf_table_current)
+    a = input("повторить балансировку")
+    if a=="1":
+        return balancer(last_signal)
+    return portf_table_current
 
 
 def orders_info(asset,time):
