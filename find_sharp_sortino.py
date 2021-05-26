@@ -1,6 +1,5 @@
 # Сортино
 import datetime
-
 import pandas as pd
 import xlwings as xw
 
@@ -12,7 +11,6 @@ pd.options.display.max_columns = 20
 pd.options.display.expand_frame_repr = False
 
 client = bs.client
-
 
 def fun_atr(table_data):
     """Скользящее среднее
@@ -79,8 +77,7 @@ def fun_sortino_(table_data):
     sortino = (srednee_znac_dohodn - Rf) / profitability ** (1 / 2)
     return sortino
 
-
-def take_data_candle(asset, daily_interval):
+def take_data_candle(asset, daily_interval,end_day=None):
     """
  Функция обработки таблицы для извленения по интервалу и времени параметров свечей.
         1499040000000,      # Open time
@@ -96,6 +93,7 @@ def take_data_candle(asset, daily_interval):
         "28.46694368",      # Taker buy quote asset volume
         "17928899.62484339" # Can be ignored
     ]
+возвращает Datafreme
 ]"""
 
     interval = '1d'
@@ -103,8 +101,11 @@ def take_data_candle(asset, daily_interval):
     time_delta = time_delta.total_seconds()
     print(bs.current_time, time_delta)
     start_str = bs.current_time['serverTime'] / 1000 - time_delta
-
-    end_day = bs.current_time['serverTime'] / 1000 - (datetime.timedelta(1)).total_seconds()  # Окончания поиска.
+    if end_day==None:#Данное решение необходимо для тестирования системы, при тесте по дням.
+        end_day = bs.current_time['serverTime'] / 1000 - (datetime.timedelta(1)).total_seconds()  # Окончания поиска.
+    else:
+        end_day= bs.current_time['serverTime'] / 1000 - (datetime.timedelta(end_day)).total_seconds()
+        start_str = end_day-time_delta
 
     print("time", str(start_str))
     print(f"инструмент {asset}")
@@ -240,19 +241,24 @@ def ask_input():
         return ask_input()
 
 
-def insert_excel(table, cell="A1"):
+def insert_excel(table, cell="A1",table_name=None):
     """Функция для вставки в excel"""
     try:
-        a = int(input("Введите нужен ли импорт в excel Yes=1 "))
+        a = int(input(f"Введите нужен ли импорт в excel {str(table_name)} Yes=1 "))
     except:
         return insert_excel(table, cell)
+
+    if table_name!=None:
+        table_name=table_name
+    else:
+        table_name = str(datetime.date.today())
+
     if a == 1:
-        date = str(datetime.date.today())
         xlbook = xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
         try:
-            xlsheet = xlbook.sheets.add(name=date)
+            xlsheet = xlbook.sheets.add(name=table_name)
         except:
-            xlsheet = xlbook.sheets(date)
+            xlsheet = xlbook.sheets(table_name)
         finally:
             xlsheet.range(cell).options(index=False).value = table
             print("вставка успешна")

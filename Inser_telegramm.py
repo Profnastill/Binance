@@ -5,7 +5,11 @@ It echoes any incoming text messages.
 """
 
 import logging
-import candle_graf
+
+import portfel_risk_balncer
+
+
+
 
 from aiogram import Bot, Dispatcher, executor, types
 
@@ -34,6 +38,12 @@ async def echo(message: types.Message):
 @dp.message_handler(commands="test1")
 async def cmd_test1(message: types.Message):
     await message.reply("Test 1")
+
+@dp.message_handler(commands="balance")
+async def cmd_test1(message: types.Message):
+    data_tb=portfel_risk_balncer.main()
+    await message.reply("data_tb")
+
 
 async def cmd_test2(message: types.Message):
     await message.reply("Test 211")
