@@ -8,6 +8,9 @@ import find_sharp_sortino as ssf
 from datetime import date
 from candle_graf import insert_excel,insert_csv,fun_graf_delta
 
+
+
+
 import xlwings as xw
 
 def f_balancer(last_signal):
