@@ -60,7 +60,7 @@ last_signal = pd.DataFrame(columns=columns, index=[0, 0])  # Пустая таб
 
 def write_base_csv(asset,table):
     """Запись тестовой базы данных день сигнал цена закрытия """
-    if asset=="BTC":
+    if asset=="BZ=F":
         table.to_csv(f'B:/download/test_base_BTC.csv', index_label='Open time')
         return
     else:

@@ -7,7 +7,7 @@ import balance_mod
 import find_sharp_sortino as ssf
 from datetime import date
 from candle_graf import insert_excel,insert_csv,fun_graf_delta
-
+from find_sharp_sortino import take_data_candle
 
 
 
@@ -39,7 +39,7 @@ def f_balancer(last_signal):
             "signal"] / summa_tb_1  # Значения которые должны быть на самом деле
         portf_table_current.loc[portf_table_current['asset'] == "USD", "USDT_new"] = 0
 
-    portf_table_current['by/cell'] = pow(portf_table_current['USDT_new'] - portf_table_current['USDT'],
+    portf_table_current['by/cell'] = pow(portf_table_current['USDT'] - portf_table_current['USDT_new'],
                                          1)  # Количество долларов на которое надо продать или купить в портфель
     print(" Баланс новый\n", portf_table_current)
     return portf_table_current
@@ -53,7 +53,8 @@ def f_balancer(last_signal):
 
 
 def read_csv_():
-    """читаем базу с данными возвращаем сигнал"""
+    """читаем базу с данным
+    и возвращаем сигнал"""
     tcur_time=date.today()
     tcur_time=tcur_time.strftime("%m%d%Y")
     print("время",tcur_time)
