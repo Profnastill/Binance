@@ -35,3 +35,29 @@ df2 = pd.DataFrame({'ID': ['1', '2', '3', '4'], 'col_1': [7, 2, 7, 3], 'col_2': 
 t=pd.DataFrame()
 t=t.append((df2))
 print(t)
+
+
+class portf:
+    def __init__(self,balance):
+        self.__balans=balance
+        self.__free=0
+        self.price=1
+        self.__comissia=0.1
+
+    def __set_free(self,count):
+        self.__free+=count
+        self.__balans+=count*self.price-count*self.price*self.__comissia
+
+    def __get_balance(self):
+        return self.__balans
+
+    def __get_free(self):
+        print("Баланс текущий {self.__free}")
+        return self.__free
+
+    change_free=property(__get_free,__set_free)
+    balance=property(__get_balance)
+
+a=portf(10000)
+a.change_free=-20
+print(a.balance)
