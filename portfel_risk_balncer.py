@@ -4,10 +4,9 @@
 
 import pandas as pd
 import balance_mod
-import find_sharp_sortino as ssf
 from datetime import date
 from candle_graf import insert_excel,insert_csv,fun_graf_delta
-from find_sharp_sortino import take_data_candle
+
 
 
 
@@ -90,5 +89,6 @@ def main():
 
 if __name__=="__main__":
    balance_tb=main()
+   balance_tb
    insert_excel(balance_tb,'j1',table_name="Портфель")
    #test_module()

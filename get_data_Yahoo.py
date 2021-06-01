@@ -23,7 +23,7 @@ def yhoo_data_taker(asset, day, end_day=start_day):
     day_set = day_set.rename({'Date': 'Open time'}, axis='columns')
     PATTERN_IN = "%Y-%m-%d"
     #day_set['Open time']=pd.to_datetime(day_set['Open time'].values,format=PATTERN_IN)
-    # day_set['Open time'] =day_set['Open time'].astype(np.datetime64)
+    day_set['Open time'] =day_set['Open time'].apply(lambda x: (x.to_pydatetime()))
 
     return day_set
 
@@ -31,10 +31,13 @@ def yhoo_data_taker(asset, day, end_day=start_day):
 if __name__ == "__main__":
     end_day = start_day - datetime.timedelta(260)
     day_set = yhoo_data_taker("RUB=X", 260)
-    print(day_set)
-
-    print(type(day_set["Open time"][-1::].values), type(np.datetime64(start_day)))
-
+    print(day_set["Open time"])
+    day=day_set[["Open time"]][-1::].values[0][0]
+    print(day)
+    print(type(day), type(end_day))
+    #print(type(datetime.timedelta(260)))
+    day=day_set["Open time"][-1::].values + datetime.timedelta(260)
+    print(day)
     # print((day_set,np.datetime64(start_day)))
 
     # print(day_set.loc[:,"Open time"])

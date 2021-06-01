@@ -28,3 +28,10 @@ print("-"*10)
 print (ge)
 
 print (ge[-1::])
+
+
+print("----")
+df2 = pd.DataFrame({'ID': ['1', '2', '3', '4'], 'col_1': [7, 2, 7, 3], 'col_2': [1, 4, 5, 4], 'col_3': [3, 4, 6, 5]})
+t=pd.DataFrame()
+t=t.append((df2))
+print(t)

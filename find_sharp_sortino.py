@@ -34,7 +34,7 @@ def fun_atr(table_data):
     return atr
 
 
-def fun_sharp_(table_data):
+def fun_sharp_(table_data:pd.DataFrame):
     """Нахождение значения коэф шарпа пока без atr"""
     atr = fun_atr(table_data)  # Нахождение скользящего среднего
 
@@ -77,7 +77,7 @@ def fun_sortino_(table_data):
     sortino = (srednee_znac_dohodn - Rf) / profitability ** (1 / 2)
     return sortino
 
-def take_data_candle(asset, daily_interval,end_day=None):
+def take_data_candle(asset:str, daily_interval,end_day=None):
     """
  Функция обработки таблицы для извленения по интервалу и времени параметров свечей.
         1499040000000,      # Open time
