@@ -58,9 +58,43 @@ class crt_balans:
         self.balance = 0
 
 
+class portf_cls:
+    def __init__(self, balance):
+        self.__balance = balance
+        self.__free = 0
+        self.price = 0
+        self.__comissia = 0.1
+
+    def __set_free(self, count):
+        print(f"Цена {self.price}")
+        print("2---", count * self.price + (count * self.price * self.__comissia), self.__balance, self.__free, count)
+        if count * self.price + (count * self.price * self.__comissia) <= self.__balance and self.__free + count >= 0:
+            self.__free += count
+            self.__balance -= count * self.price + count * self.price * self.__comissia
+            print(f"Куплено{count}")
+
+    def __get_balance(self):
+        print(f"Баланс текущий {self.__balance}")
+        return self.__balance
+
+    def __get_free(self):
+        print(f"количество текущее {self.__free}")
+        return self.__free
+
+    def __get_cost(self):
+        """Стоимость всего портфеля"""
+        cost = self.__balance + self.price * self.__free
+        return cost
+
+    free = property(__get_free, __set_free)
+    balance = property(__get_balance)
+    port_cost = property(__get_cost)
+
+
 class balance():
-    def __init__(self, balance, data_table: pd.DataFrame):
-        self.balance = balance
+    def __init__(self, data_table: pd.DataFrame):
+        # self.balance = balance
+        self.portf = portf_cls(10000)  # Инициализируем класс портфеля
         self.data_tb = data_table.copy(deep=True)
         self.free = 0
         self.comissia = 0.1  # Комиссия в процентах
@@ -88,67 +122,27 @@ class balance():
                 print(self.data_tb.loc[[self.__next_day], :])
                 if self.data_tb.loc[self.__next_day, 'Open'] > 0:
                     self._sell_by()
-
             except KeyError:
                 None
 
-            self.data_tb.loc[self.__next_day, "стоим.актив"] = self.balance + self.free * self.data_tb.loc[
-                self.__next_day, "Open"]
-        self.data_tb.loc[self.__next_day, "стоим.актив"] = self.balance + self.free * self.data_tb.loc[
-            self.__next_day, "Open"]
+            self.data_tb.loc[self.__next_day, "стоим.актив"] = self.portf.port_cost
+        #self.data_tb.loc[self.__next_day, "стоим.актив"] = self.portf.port_cost
         self.sharpa = self.fun_sharp_(self.data_tb)
-        self.portfel_cost = self.balance + self.free * self.data_tb.loc[day, "Open"]  # Стоимость портфеля
-
+        # self.portfel_cost = self.portf.balance + self.free * self.data_tb.loc[day, "Open"]  # Стоимость портфеля
         print("--Шарпа-", self.sharpa)
 
-    def make_order_0ld(self, by_sell):
-        day_cost = self.data_tb.loc[self.__next_day, "Open"]  # стоимость актива текущая
-        print("создание ордера")
-
-        if by_sell == "by" and self.balance > 0:
-
-            count_change = self.signal * self.balance / day_cost  # Купленное количестdо
-            self.balance -= count_change * day_cost  # Уменьшаем баланс на величину стоимости покупки
-            self.free += count_change - count_change * self.comissia
-
-        elif by_sell == "sell" and self.free > 0:
-            print()
-            usd_change = self.free * day_cost
-            self.free -= self.free
-            self.balance += usd_change - usd_change * self.comissia
-        else:
-            None
-        print("_------------------------------------------")
-
-        print(f"{self.__next_day} ,кол-во= {self.free},стоимость активов={self.balance + self.free * day_cost}")
-
-    def make_order(self, count_change: float):
-        """count_chage = -100 1020"""
-        day_cost = self.data_tb.loc["Open"].values  # стоимость актива текущая
-        print("создание ордера")
-        self.balance += count_change * day_cost
-        self.free += count_change
-        if self.signal < 0.2:  # Если меньше 0.5 продать все активы
-            self.balance += self.free * day_cost
-            self.free += -self.free
-        print(
-            f"{self.data_tb.loc[self.__next_day]},кол-во= {self.free},стоимость активов={self.balance + self.free * day_cost}")
-
     def _sell_by(self):
+
         """Модуль запуска выстановки ордеров в зависимости от сигнала"""
-        price=self.data_tb.loc[self.__next_day, "Open"]#Цена
-        need_cost=self.balance*self.signal
-        count_change=self.free-need_cost/price#количество изменяемое
-
-
-
-        if (self.signal > 0.5) & (self.balance > 0) & (count_change != self.free):
+        price = self.data_tb.loc[self.__next_day, "Open"]  # Цена
+        self.portf.price = price
+        need_cost = self.portf.port_cost * self.signal
+        count_change = need_cost / price - self.portf.free  # количество изменяемое
+        if (self.signal > 0.5):
             print("создание ордера")
-            self.balance += count_change * price - (self.comissia * count_change * price)
-            self.free += count_change
-        elif self.signal < 0.5 and self.free > 0:
-            self.balance += self.free * price - (self.comissia * count_change * price)
-            self.free -= self.free
+            self.portf.free = count_change
+        elif self.signal < 0.5 and self.portf.free > 0:
+            self.portf.free -= self.free
 
 
 def fu_znach_find():
@@ -171,15 +165,14 @@ def main(asset, znach_find):
     znach_doh = []
     index = []
     sharp = []
-    # final=pd.DataFrame(columns=["n","Параметры wk", "Баланс","Шарпа"],index=[0,0,0])
     final = pd.DataFrame()
-    for n in [2]:
+    for n in [2,4,8]:
         for x1, x2, x3 in znach_find:
             date_tb.wk = {0: x1, 1: x2, 2: x3}
             date_tb._fun_graf_delta(asset)  # Передаем значение в класс
-            bal = balance(10000, date_tb.base)
+            bal = balance(date_tb.base)
             index.extend([f"{round(x1, 2)}_{round(x2, 2)}_{round(x3, 2)}"])
-            znach_doh.extend([bal.portfel_cost])
+            znach_doh.extend([bal.portf.port_cost])
             print("--ada", bal.sharpa, type(bal.sharpa))
             sharp.extend([bal.sharpa])
             print(index)
@@ -192,8 +185,8 @@ def main(asset, znach_find):
     select = final[select]
     print(analiz)
     print("Найденное знач\n", select)
-    print(bal.free, bal.balance)
-    return bal.free, bal.balance
+    print(bal.free, bal.portf.port_cost)
+    return bal.free, bal.portf.port_cost
 
 
 if __name__ == "__main__":
@@ -205,5 +198,5 @@ if __name__ == "__main__":
     date_tb = graf_delta_cls(360, asset)
     analiz = pd.DataFrame()
     znach_find = fu_znach_find()
-    znach_find = [[0.15, 0.4, 0.45], [0.15, 0.45, 0.4]]
+    #znach_find = [[0.15, 0.4, 0.45], [0.15, 0.45, 0.4]]
     main(asset, znach_find)

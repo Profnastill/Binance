@@ -37,7 +37,7 @@ t=t.append((df2))
 print(t)
 
 
-class portf:
+class portf_cls:
     def __init__(self,balance):
         self.__balans=balance
         self.__free=0
@@ -49,15 +49,31 @@ class portf:
         self.__balans+=count*self.price-count*self.price*self.__comissia
 
     def __get_balance(self):
+        print(f"Баланс текущий {self.__balans}")
         return self.__balans
 
     def __get_free(self):
-        print("Баланс текущий {self.__free}")
+        print(f"Баланс текущий {self.__free}")
         return self.__free
 
     change_free=property(__get_free,__set_free)
     balance=property(__get_balance)
 
-a=portf(10000)
-a.change_free=-20
-print(a.balance)
+
+class new:
+    def __init__(self):
+        self.b=self.change()
+    def change(self):
+        portf=portf_cls(10000)
+        portf.change_free = -1111
+        print(portf.balance)
+        portf.balance
+
+
+
+
+
+def sfds():
+    gf=new()
+
+sfds()
