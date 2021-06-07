@@ -112,7 +112,7 @@ def fun_graf_delta(asset, day_interval, day=None):
         # print('станд отклонеение', standert_dev_252)
         candel_tb['uk'] = (candel_tb['zk'] * (math.e ** (-(candel_tb['zk'] ** 2) / 4))) / (
                 math.sqrt(2) * math.e ** (-1 / 2))  # Функция реакции
-        wk = {0: 0.15, 1: 0.45, 2: 0.4}  # Веса для
+        wk = {0: 0.4, 1: 0.45, 2: 0.15}  # Веса для
         # wk={0:0.15,1:0.35,2:0.50}#Веса для
         wk = wk[i]  # Веса
         candel_tb['signal'] += wk * candel_tb['uk']  # получения сигнала
@@ -145,7 +145,7 @@ def fun_graf_delta(asset, day_interval, day=None):
     return last_signal
 
 
-def filter_signal(signal):
+def filter_signal_old(signal):
     """Фильтр по коэффициенту signal. Принимает название инструмента и таблицу сигналов """
     test_p = None
     signal = signal.reset_index(drop='index')
@@ -170,6 +170,21 @@ def filter_signal(signal):
             test_p = None
     return test_p
 
+
+def filter_signal(self, signal):
+    """Фильтр по коэффициенту signal.
+     Находит инстрменты которые пробили уровень 0.5
+     Принимает название инструмента и таблицу сигналов """
+    test_p = None
+    signal = signal.reset_index(drop='index')
+    # print("signal insert table \n", signal)
+    x1 = signal['signal'].iloc[0]
+    x2 = signal['signal'].iloc[1]  # последний
+    if x1 < 0.5 and x2 > 0.5:
+        test_p = "UP"
+    else:
+        test_p = None
+    return test_p
 
 def input_enter():
     enter = input('Нажмите enter')

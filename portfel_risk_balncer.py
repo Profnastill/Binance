@@ -18,15 +18,25 @@ def f_balancer(last_signal):
     volume_usdt = balance_mod.volume_usdt
     portf_table_current = portf_table_current.append({'asset': "USD", 'USDT': volume_usdt[0]},
                                                      ignore_index=True)  # Добавили строку с объемом текущих наличных долларов
-    summa_portf_cost = portf_table_current['USDT'].sum()  # Сумма по таблице с текущим портфелем
+
     print(last_signal)
-    print(portf_table_current)
+
     portf_table_current = portf_table_current.merge(last_signal, how='left', on='asset')
+    summa_portf_cost = portf_table_current['USDT'].sum()  # Сумма по таблице с текущим портфелем
+    print("теукщая табл \n",portf_table_current)
     sred = portf_table_current['signal'].mean(skipna=True)  # Среднее значение
+
+    portf_table_current.loc[portf_table_current["signal"]<0,('signal')]=0
+    portf_table_current['необх колич $']=summa_portf_cost*portf_table_current['signal']
+    portf_table_current["by/sell2"]=portf_table_current['необх колич $']-portf_table_current['USDT']
+
+
+
+
     summa_tb_1 = portf_table_current['signal'].sum()
     print("Текущий баланс \n", portf_table_current)
 
-    if sred < 0:  # Страховка портфеля
+    if sred < -1:  # Страховка портфеля
         USD_new = portf_table_current["USDT"] * 0.4  # оставить 40% денег в кеше
         portf_table_current["USDT_new"] = summa_portf_cost * portf_table_current[
             "signal"] / summa_tb_1 - USD_new  # Значения которые должны быть на самом деле

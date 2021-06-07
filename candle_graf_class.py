@@ -50,15 +50,13 @@ class graf_delta_cls:
 
     """
 
-    def __init__(self, day_interval, asset:str='BTC'):
+    def __init__(self, day_interval, asset: str = 'BTC'):
         self.__day_interval = day_interval
         # self._chooise_find()
         self.__tcur_time = date.today()
         self.day = timedelta(1)
         self.__tcur_time = date.today() - self.day
-        self.__find_candel_table(asset)# Функция поиска дневных моделей по имени инструмента
-
-
+        self.__find_candel_table(asset)  # Функция поиска дневных моделей по имени инструмента
         self.n = 8
         self.__n1 = [self.n, self.n * 2, self.n * 4]  # Коэффициент количество дней для сколь средней
         self.__n2 = [self.n * 3, self.n * 6, self.n * 12]
@@ -102,22 +100,22 @@ class graf_delta_cls:
         """Выбор что найти хотим"""
         inp = input("выберите что ищем:  1- сигнал 2-график")
         if int(inp) == 1:
-            table.apply(lambda x: self.start(x.asset), axis=1)#Вызов комбинарота
+            table.apply(lambda x: self.start(x.asset), axis=1)  # Вызов комбинарота
         elif int(inp) == 2:
             table.apply(lambda x: self._fun_ewa(x.asset), axis=1)
         else:
             return self.__choice_find(table)
 
-    def start(self,asset):
+    def start(self, asset):
         "Комбинатор функция для одновременного вызова"
         self.__find_candel_table(asset)
-        self._fun_graf_delta(asset)
+        self.fun_graf_delta(asset)
 
-    def __find_candel_table(self, asset:str, day=None):
-        """Функция построения эксп скол средней. и нахождение сигнала покупки и продажт"""
+    def __find_candel_table(self, asset: str, day=None):
+        """Функция  нахождения данных для свечных моделей"""
         print(asset)
         candel_tb = take_data_candle(asset, self.__day_interval, day)  # Получаем набор свечей для asset
-        print("-----------\n",candel_tb)
+        print("-----------\n", candel_tb)
         # Запускаем попытку поиска на YHOO
         # candel_tb['SMA1']= candel_tb.rolling(window=n1).mean()# Скользящая средняя
         if len(candel_tb) < 26:  # Защита если таблица вдруг пустая пришла
@@ -131,17 +129,21 @@ class graf_delta_cls:
         if candel_tb["Open time"][-1::].values == np.datetime64(self.__tcur_time - timedelta(
                 3)):  # Отсеиваем элементы для которых по какой то причине данные не сооответствуют тек дню
             return
-        self.__candel_tb=candel_tb
-        return self.__candel_tb #Возвращает таблицу с с данными по свечам
+        self.__candel_tb = candel_tb
+        return self.__candel_tb  # Возвращает таблицу с с данными по свечам
 
-    def _fun_graf_delta(self,asset):
+    def fun_graf_delta(self, asset):
+        """функция построения сигнала, принимает в себя названия asset
+        Возвращает сигнал для инструмента"""
         self.__candel_tb['signal'] = 0
         base_candel = pd.DataFrame()
         for i in range(len(self.__n1)):
             name_1 = str(self.__n1[i])  # получаем имя для графика
             name_2 = str(self.__n2[i])
-            self.__candel_tb['EWA1-' + name_1] = self._ema_f(self.__candel_tb, self.__n1[i])  # Эксопненциальная скользящая средняя №1
-            self.__candel_tb['EWA2-' + name_2] = self._ema_f(self.__candel_tb, self.__n2[i])  # Эксопненциальная скользящая средняя №2
+            self.__candel_tb['EWA1-' + name_1] = self._ema_f(self.__candel_tb,
+                                                             self.__n1[i])  # Эксопненциальная скользящая средняя №1
+            self.__candel_tb['EWA2-' + name_2] = self._ema_f(self.__candel_tb,
+                                                             self.__n2[i])  # Эксопненциальная скользящая средняя №2
             self.__candel_tb['xk'] = self.__candel_tb['EWA1-' + name_1] - self.__candel_tb['EWA2-' + name_2]
             standert_dev_63 = self.__candel_tb['Close'][-63::1].std()  # Стандартное отклонение 63 дня
             self.__candel_tb['yk'] = self.__candel_tb['xk'] / standert_dev_63
@@ -157,19 +159,19 @@ class graf_delta_cls:
         self.base = self.__candel_tb  # База данных
         self.__candel_tb['signal'] = self.__candel_tb['signal'].round(2)
 
-
-        #self.__candel_tb['Удар'] = self.__filter_signal(self.__candel_tb[['asset', 'signal']][-2::1])  # Запускаем функцию рассматриваем только два дня
-        self.__candel_tb['Удар']=0# временно отключим
+        # self.__candel_tb['Удар'] = self.__filter_signal(self.__candel_tb[['asset', 'signal']][-2::1])  # Запускаем функцию рассматриваем только два дня
+        self.__candel_tb['Удар'] = 0  # временно отключим
         self.__candel_tb['sharp'] = ssf.fun_sharp_(self.__candel_tb[-14::1])
         self.__candel_tb['sortino'] = ssf.fun_sharp_(self.__candel_tb[-14::1])
 
         self.last_signal = pd.concat(
             [self.last_signal, self.__candel_tb[["Open time", 'asset', 'signal', 'Удар', 'sharp', 'sortino']][-1::]],
             ignore_index=True)  # Таблица имя инструмента/сигнал для заполнения
-        self.__graf_show(self.__candel_tb, asset)  # вызыв функции заполнения данных для графика
+        #self.__graf_show(self.__candel_tb, asset)  # вызыв функции заполнения данных для графика
         return self.last_signal
 
-    def __graf_show(self, candel_tb, asset):
+    @classmethod
+    def __graf_show( candel_tb, asset):
         # данные для отображения графиков
         fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset,
                                  mode='lines'))  # Обновление для графиков
@@ -188,29 +190,17 @@ class graf_delta_cls:
 
     def __filter_signal(self, signal):
         """Фильтр по коэффициенту signal.
-         Находит инстрменты которые пробили Биткоин
+         Находит инстрменты которые пробили уровень 0.5
          Принимает название инструмента и таблицу сигналов """
         test_p = None
         signal = signal.reset_index(drop='index')
         # print("signal insert table \n", signal)
-        global btc_table
-        if signal['asset'].values[0] == 'BTC':  # Сохранения данных для Битка для использования его как фильтр
-            btc_table = signal.copy(deep=True).reset_index()
-            btc_table.reset_index(inplace=True)
-            print("BTC table \n", signal, )
-            test_p = 0
-            return
+        x1 = signal['signal'].iloc[0]
+        x2 = signal['signal'].iloc[1]  # последний
+        if x1 < 0.5 and x2 > 0.5:
+            test_p = "UP"
         else:
-            x4 = btc_table['signal'].iloc[1]  # последний
-            x3 = btc_table['signal'].iloc[0]
-            x1 = signal['signal'].iloc[0]
-            x2 = signal['signal'].iloc[1]  # последний
-            if x1 < x3 and x2 > x4:
-                test_p = "UP"
-            elif x1 > x3 and x2 < x4:
-                test_p = "Down"
-            else:
-                test_p = None
+            test_p = None
         return test_p
 
 
@@ -261,14 +251,18 @@ if __name__ == '__main__':
     table: pd.DataFrame = pd.concat([base_table, table], ignore_index=True,
                                     sort=False)  # Добавляем базовые инструменты для сравнения
     table.drop_duplicates(subset=['asset'], inplace=True)  # Удаляем дублирования инструментов
-    print('Таблица c позициями \n', table)
+    #print('Таблица c позициями \n', table)
     day = 360  # Дни поиска
-    start = graf_delta_cls(day)
+
     # start._chooise_find()  # Запуск выбора что таблиц поиска Изменяет в глобальном пространстве имен lastsignal
-    #start.grafics_show()
-    BTC = graf_delta_cls(day)
-    BTC._fun_graf_delta("XLM")
-    print(BTC.base)
+    # start.grafics_show()
+
+    for asset in table['asset']:
+        start = graf_delta_cls(day,asset)
+        start.fun_graf_delta(asset)
+        print("Назваеме \n",asset)
+        #graf._fun_graf_delta(asset)
+        print(start.base)
 
     #    insert_csv(last_signal, "all_find_signal")  # Тут вставляем всю таблицу обновляем базу данных
 

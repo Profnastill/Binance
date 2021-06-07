@@ -48,7 +48,6 @@ def test_module2(data_tb: pd.DataFrame):
     """Функция для тестирования системы по дням"""
     data_tb.rolling()
 
-
 class crt_balans:
     def __init__(self):
         self.balance = 10000
@@ -57,8 +56,8 @@ class crt_balans:
     def change_balance(self):
         self.balance = 0
 
-
 class portf_cls:
+    """Класс портфель"""
     def __init__(self, balance):
         self.__balance = balance
         self.__free = 0
@@ -67,11 +66,11 @@ class portf_cls:
 
     def __set_free(self, count):
         print(f"Цена {self.price}")
-        print("2---", count * self.price + (count * self.price * self.__comissia), self.__balance, self.__free, count)
+        #print("2---", count * self.price + (count * self.price * self.__comissia), self.__balance, self.__free, count)
         if count * self.price + (count * self.price * self.__comissia) <= self.__balance and self.__free + count >= 0:
             self.__free += count
             self.__balance -= count * self.price + count * self.price * self.__comissia
-            print(f"Куплено{count}")
+            print(f"Куплено {count}")
 
     def __get_balance(self):
         print(f"Баланс текущий {self.__balance}")
@@ -93,7 +92,6 @@ class portf_cls:
 
 class balance():
     def __init__(self, data_table: pd.DataFrame):
-        # self.balance = balance
         self.portf = portf_cls(10000)  # Инициализируем класс портфеля
         self.data_tb = data_table.copy(deep=True)
         self.free = 0
@@ -109,7 +107,7 @@ class balance():
         Rf = standart_dohodn / 365  # доходность дневная без рисковая
         standart_dev = table_data["Доходность шарп"].std(skipna=True)  # Стандартное отклонение
         sharp = (srednee_znac_dohodn - Rf) / standart_dev  # Через стандартное отклонение
-        return round(sharp, 3)
+        return round(sharp, 4)
 
     def _dey_changer(self):
         self.data_tb.set_index("Open time", inplace=True)
@@ -138,10 +136,10 @@ class balance():
         self.portf.price = price
         need_cost = self.portf.port_cost * self.signal
         count_change = need_cost / price - self.portf.free  # количество изменяемое
-        if (self.signal > 0.5):
+        if (self.signal > 0.2):
             print("создание ордера")
             self.portf.free = count_change
-        elif self.signal < 0.5 and self.portf.free > 0:
+        elif self.signal < 0.2 and self.portf.free > 0:
             self.portf.free -= self.free
 
 
@@ -166,10 +164,11 @@ def main(asset, znach_find):
     index = []
     sharp = []
     final = pd.DataFrame()
-    for n in [2,4,8]:
+    for n in [8]:
+        date_tb.n=n
         for x1, x2, x3 in znach_find:
             date_tb.wk = {0: x1, 1: x2, 2: x3}
-            date_tb._fun_graf_delta(asset)  # Передаем значение в класс
+            date_tb.fun_graf_delta(asset)  # Передаем значение в класс
             bal = balance(date_tb.base)
             index.extend([f"{round(x1, 2)}_{round(x2, 2)}_{round(x3, 2)}"])
             znach_doh.extend([bal.portf.port_cost])
@@ -184,7 +183,7 @@ def main(asset, znach_find):
     select = (final["Шарпа"] == analiz_max)
     select = final[select]
     print(analiz)
-    print("Найденное знач\n", select)
+    print("Найденное знач\n", select,asset)
     print(bal.free, bal.portf.port_cost)
     return bal.free, bal.portf.port_cost
 
