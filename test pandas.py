@@ -70,10 +70,33 @@ class new:
         portf.balance
 
 
-
-
-
 def sfds():
     gf=new()
 
+
 sfds()
+
+class sums:
+    def __init__(self):
+        self.sum=0
+    def add(self,a):
+        self.sum+=a
+
+
+
+sums=sums()
+
+
+class test:
+    def __init__(self,a):
+        self.a=a
+        sums.add(a)
+
+    @classmethod
+    def summ(cls):
+        return sums.sum
+
+for i in [1,3,5]:
+    start=test(i)
+    start.summ()
+print(start.summ())

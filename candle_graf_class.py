@@ -1,17 +1,15 @@
 """Модуль проверки по сигналу на основе скользящего среднего, так же строим графики свечей"""
 import math
-# import stocker
-import time
 from datetime import date, timedelta
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-import find_sharp_sortino as ssf
+
 import get_data_Yahoo
-# import dash
-from find_sharp_sortino import take_data_candle, ask_input
+
+from find_sharp_sortino import take_data_candle, ask_input,insert_excel,fun_sharp_
 
 fig = go.Figure()  # Создаем график
 columns = ['asset', 'signal']
@@ -30,6 +28,46 @@ def write_base_csv(asset, table):
         return
     else:
         return
+
+
+class data_tb_save_cls:
+    """
+    Класс для сборки данных рассчитынных для каждого asset в сборную табличку pandas
+
+    insert_xls_file- печать резльтатов в xls файл
+
+    """
+    def __init__(self):
+
+        self._table = pd.DataFrame(columns=["Open time", 'asset', 'signal', 'Удар', 'sharp', 'sortino'])
+
+    def table_connect(self, data):
+        self._table: pd.DataFrame
+        print("--сигналы по инструментам-")
+        print(data)
+        # self._table=pd.concat(self._table,data,ignore_index=True)
+        self._table = self._table.append(data)
+        self._table = self._table.reindex()
+
+
+    def filter(self):
+        # Фильтр выборки для УДара по значению сигнала
+        self._table.dropna(how='all', inplace=True)
+        self._table.sort_values(by=['signal'], inplace=True)
+        select_2 = self._table.query('(Удар == "UP") | (Удар == "Down")')
+        return select_2
+
+
+
+    def insert_xls_file(self):
+
+        l=len(self._table)
+        insert_excel(self._table,"L1")
+        insert_excel(self.filter(),f"L{str(l+4)}")
+
+
+
+data_save = data_tb_save_cls() #Инициализация класса
 
 
 class graf_delta_cls:
@@ -60,8 +98,8 @@ class graf_delta_cls:
         self.n = 8
         self.__n1 = [self.n, self.n * 2, self.n * 4]  # Коэффициент количество дней для сколь средней
         self.__n2 = [self.n * 3, self.n * 6, self.n * 12]
-        self.last_signal = pd.DataFrame(columns=['asset', 'signal'], index=[0, 0])
-        self.wk = {0: 0.15, 1: 0.35, 2: 0.50}  # Веса для скользящих средних
+        # self.last_signal = pd.DataFrame(columns=['asset', 'signal'])
+        self.wk = {0: 0.4, 1: 0.45, 2: 0.15}  # Веса для скользящих средних
 
         # self._chooise_find()
 
@@ -95,21 +133,6 @@ class graf_delta_cls:
             candel_tb['EWA2-' + name_2] = self._ema_f(candel_tb, self.__n2[i])  # Эксопненциальная скользящая средняя №2
         grapf(candel_tb, asset)
         return candel_tb
-
-    def __choice_find(self, table: pd.DataFrame):
-        """Выбор что найти хотим"""
-        inp = input("выберите что ищем:  1- сигнал 2-график")
-        if int(inp) == 1:
-            table.apply(lambda x: self.start(x.asset), axis=1)  # Вызов комбинарота
-        elif int(inp) == 2:
-            table.apply(lambda x: self._fun_ewa(x.asset), axis=1)
-        else:
-            return self.__choice_find(table)
-
-    def start(self, asset):
-        "Комбинатор функция для одновременного вызова"
-        self.__find_candel_table(asset)
-        self.fun_graf_delta(asset)
 
     def __find_candel_table(self, asset: str, day=None):
         """Функция  нахождения данных для свечных моделей"""
@@ -158,42 +181,41 @@ class graf_delta_cls:
             base_candel = pd.concat([base_candel, self.__candel_tb], ignore_index=True)
         self.base = self.__candel_tb  # База данных
         self.__candel_tb['signal'] = self.__candel_tb['signal'].round(2)
+        self.__candel_tb['Удар'] = self.__filter_signal()  # временно отключим
+        self.__candel_tb['sharp'] = fun_sharp_(self.__candel_tb[-14::1])
+        self.__candel_tb['sortino'] = fun_sharp_(self.__candel_tb[-14::1])
+        data_save.table_connect(self.__candel_tb[["Open time", 'asset', 'signal', 'Удар', 'sharp', 'sortino']][-1::])
 
-        # self.__candel_tb['Удар'] = self.__filter_signal(self.__candel_tb[['asset', 'signal']][-2::1])  # Запускаем функцию рассматриваем только два дня
-        self.__candel_tb['Удар'] = 0  # временно отключим
-        self.__candel_tb['sharp'] = ssf.fun_sharp_(self.__candel_tb[-14::1])
-        self.__candel_tb['sortino'] = ssf.fun_sharp_(self.__candel_tb[-14::1])
+        self.__graf_show(self.__candel_tb, asset)  # вызыв функции заполнения данных для графика
+        # return self.last_signal
 
-        self.last_signal = pd.concat(
-            [self.last_signal, self.__candel_tb[["Open time", 'asset', 'signal', 'Удар', 'sharp', 'sortino']][-1::]],
-            ignore_index=True)  # Таблица имя инструмента/сигнал для заполнения
-        #self.__graf_show(self.__candel_tb, asset)  # вызыв функции заполнения данных для графика
-        return self.last_signal
-
-    @classmethod
-    def __graf_show( candel_tb, asset):
+    def __graf_show(self, candel_tb, asset):
         # данные для отображения графиков
         fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset,
                                  mode='lines'))  # Обновление для графиков
         fig.update_layout(title="График_импульса", yaxis_title='singnal')
 
+    @classmethod
     def grafics_show(self):
         # Отображает график
         fig.show()
 
-    def filter(self):
-        # Фильтр выборки для УДара по значению сигнала
-        self.last_signal.dropna(how='all', inplace=True)
-        self.last_signal.sort_values(by=['signal'], inplace=True)
-        select_2 = self.last_signal.query('(Удар == "UP") | (Удар == "Down")')
-        return select_2
+    @classmethod
+    def last_signals(self):
+        print("Таблица с сигналами \n", data_save._table)
+        return data_save._table
 
-    def __filter_signal(self, signal):
-        """Фильтр по коэффициенту signal.
+    def __filter_signal(self):
+        """
+        Фильтр по коэффициенту signal.
+
          Находит инстрменты которые пробили уровень 0.5
-         Принимает название инструмента и таблицу сигналов """
+
+         Принимает название инструмента и таблицу сигналов
+         """
         test_p = None
-        signal = signal.reset_index(drop='index')
+        signal = self.__candel_tb
+        signal = signal.reset_index(drop='index')[-2::1]
         # print("signal insert table \n", signal)
         x1 = signal['signal'].iloc[0]
         x2 = signal['signal'].iloc[1]  # последний
@@ -204,45 +226,6 @@ class graf_delta_cls:
         return test_p
 
 
-def input_enter():
-    enter = input('Нажмите enter')
-    if enter == '':
-        return
-    else:
-        return input_enter()
-
-
-def grapf(table, assetname):
-    """Функция построения графиков для необходимых инструментов"""
-    # layot=(paper_bgcolor='rgb(141,238,238)', linecolor='#636363']
-    fig = go.Figure(data=[go.Candlestick(x=table['Open time'],
-                                         open=table['Open'],
-                                         high=table['High'],
-                                         low=table['Low'],
-                                         close=table['Close']),
-                          go.Scatter(x=table['Open time'], y=table['EWA1-8'], line=dict(color='red', width=1)),
-                          go.Scatter(x=table['Open time'], y=table['EWA2-24'], line=dict(color='orange', width=1))])
-    fig.update_layout(title=assetname, yaxis_title='price')
-    #
-    fig.show()
-    time.sleep(5)
-
-
-def insert_csv(table, name: str):
-    """Сохдание файла базы"""
-    inp = input("Нужно ли обновить базу Yes=Y No=any key")
-
-    tcur_time = date.today()
-    tcur_time = tcur_time.strftime("%m%d%Y")
-    if inp == "Y":
-        # table=table['asset']
-        table['asset'] = table['asset'] + "/USD"
-        table.to_csv(f'B:/download/{str(tcur_time) + name}.csv', index_label='asset')
-        return
-    else:
-        return
-
-
 if __name__ == '__main__':
     table = ask_input()
     # tableable = table[0:2]
@@ -251,21 +234,17 @@ if __name__ == '__main__':
     table: pd.DataFrame = pd.concat([base_table, table], ignore_index=True,
                                     sort=False)  # Добавляем базовые инструменты для сравнения
     table.drop_duplicates(subset=['asset'], inplace=True)  # Удаляем дублирования инструментов
-    #print('Таблица c позициями \n', table)
+
     day = 360  # Дни поиска
-
-    # start._chooise_find()  # Запуск выбора что таблиц поиска Изменяет в глобальном пространстве имен lastsignal
-    # start.grafics_show()
-
+    #table = table[0:3]
     for asset in table['asset']:
-        start = graf_delta_cls(day,asset)
+        start = graf_delta_cls(day, asset)
+        start.wk = {0: 0.4, 1: 0.45, 2: 0.15}
         start.fun_graf_delta(asset)
-        print("Назваеме \n",asset)
-        #graf._fun_graf_delta(asset)
-        print(start.base)
 
-    #    insert_csv(last_signal, "all_find_signal")  # Тут вставляем всю таблицу обновляем базу данных
+    graf_delta_cls.last_signals()# значения последних сигналов
+    graf_delta_cls.grafics_show()#Вывод данных в графики
+    data_save.insert_xls_file()#вставка данных в excel
 
-    # transfer_data(last_signal)  # Данные в список  для yhooo
+
     print('END')
-    # table.apply(lambda x:take_data_candle(x.asset,10),axis=1)
