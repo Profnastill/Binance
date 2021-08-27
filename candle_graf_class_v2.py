@@ -1,4 +1,7 @@
-"""Модуль проверки по сигналу на основе скользящего среднего, так же строим графики свечей"""
+"""Модуль проверки по сигналу на основе скользящего среднего, так же строим графики свечей
+Попытка добавить график и веса к шарпу и сортино
+
+"""
 import math
 from datetime import date, timedelta
 
@@ -10,6 +13,8 @@ import get_data_Yahoo
 from find_sharp_sortino import take_data_candle, ask_input, insert_excel, fun_sharp_,fun_sortino_
 
 fig = go.Figure()  # Создаем график
+figsharp=go.Figure()# Создаем график для шарпа
+
 columns = ['asset', 'signal']
 index = [0, 0]
 last_signal = pd.DataFrame(columns=columns, index=[0, 0])  # Пустая таблица для добавления в нее данных
@@ -198,12 +203,24 @@ class graf_delta_cls:
         self.base = self.__candel_tb  # База данных
         self.__candel_tb['signal'] = self.__candel_tb['signal'].round(2)
         self.__candel_tb['Удар'] = self.__filter_signal()  # временно отключим
-        self.__candel_tb['sharp'] = fun_sharp_(self.__candel_tb[-14::1])
-        self.__candel_tb['sortino'] = fun_sortino_(self.__candel_tb[-14::1])
+        print(self.__candel_tb)
+        self.__candel_tb['sharp'] = self.__candel_tb.rolling(window=14).apply(fun_sharp_,raw=False)# Не работает так как получается не таблица а просто значения тут либо переписывать весь модуль шарпа сортино
+        self.__candel_tb['sortino'] =self.__candel_tb.rolling(window=14).apply(fun_sharp_,raw=True)
+
         data_save.table_connect(self.__candel_tb[["Open time", 'asset', 'signal', 'Удар', 'sharp', 'sortino']][-1::])
 
         self.__graf_show(self.__candel_tb, asset)  # вызыв функции заполнения данных для графика
+        self.__graf_show_sharp(self.__candel_tb, asset)
         # return self.last_signal
+
+    def __graf_show_sharp(self, candel_tb, asset):
+        # данные для отображения графиков
+
+        figsharp.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['sharp'], name=asset,
+                                 mode='lines'))  # Обновление для графиков
+        figsharp.update_layout(title="График_шарпа", yaxis_title='sharp')
+
+
 
     def __graf_show(self, candel_tb, asset):
         # данные для отображения графиков
@@ -216,6 +233,7 @@ class graf_delta_cls:
     def grafics_show(cls):
         # Отображает график
         fig.show()
+        figsharp.show()
 
     @classmethod
     def last_signals(cls):
@@ -237,7 +255,7 @@ class graf_delta_cls:
         # print("signal insert table \n", signal)
         x1 = signal['signal'].iloc[0]
         x2 = signal['signal'].iloc[1]  # последний
-        if x1 < 0.2 and x2 > 0.2:
+        if x1 < 0.5 and x2 > 0.5:
             test_p = "UP"
         else:
             test_p = None
@@ -246,7 +264,7 @@ class graf_delta_cls:
 
 if __name__ == '__main__':
     table = ask_input()
-    # tableable = table[0:2]
+    tableable = table[3:2]
     # ВНИМАНИЕ! строкой ниже Биток должен быть всегда первыми иначе фильтр работать не будет
     base_table = pd.DataFrame({'asset': ['BTC', 'DX-Y.NYB', "GOLD", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
     table: pd.DataFrame = pd.concat([base_table, table], ignore_index=True,

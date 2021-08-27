@@ -15,9 +15,10 @@ def yhoo_data_taker(asset, day, end_day=start_day):
     print(start_day)
     try:
         day_set = pdr.get_data_yahoo(asset, start=end_day, end=start_day)
+
     except:
         return pd.DataFrame()  # Если не сработало то вернем пустой дата фрейм
-
+    print(day_set)
     # day_set=day_set[::1]
     day_set.reset_index(inplace=True)
     day_set = day_set.rename({'Date': 'Open time'}, axis='columns')

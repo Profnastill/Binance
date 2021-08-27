@@ -13,7 +13,7 @@ pd.options.display.expand_frame_repr = False
 client = bs.client
 
 def fun_atr(table_data):
-    """Скользящее среднее
+    """Скользящее среднее Валотильности
     Принимает таблицу"""
     Candle_close = table_data["Close"]
     Candle_hight = table_data["High"]
@@ -37,10 +37,10 @@ def fun_atr(table_data):
 def fun_sharp_(table_data:pd.DataFrame):
     """Нахождение значения коэф шарпа пока без atr"""
     atr = fun_atr(table_data)  # Нахождение скользящего среднего
-
     standart_dohodn = 0
     # umber_of_day = len(table_data)
     Candle_close = table_data["Close"]
+
     # iat
     table_data["Доходность шарп"] = Candle_close.diff() / Candle_close.shift(-1)
     srednee_znac_dohodn = table_data["Доходность шарп"].mean()
@@ -188,7 +188,7 @@ def candel_classificator(asset, daily_interval):
     candle['size'] = abs(candle['Open'] - candle['Close'])  # Тело свечи
     candle['relation'] = candle['size'] / candle['Close']  # Отношение цены открытия к цене закрытия
     print(candle)
-    candle['bottomShadow'] = candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
+    candle['bottomShadow'] =candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
     candle['topShadow'] = candle['High'] - candle[["Open", "Close"]].values.max(1)
     candle['atr'] = (fun_atr(candle))  # Для указанной таблицы расчитываем ATR
     candle['candl_mean'] = candle['size'].std(axis=0)

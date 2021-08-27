@@ -106,3 +106,4 @@ for i in (n1,n2):
     print (*i)
 
 print( [1,2,3]*3)
+print("asa",len(0))

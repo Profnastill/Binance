@@ -1,4 +1,6 @@
-"""Модуль тестировки торговой стратегии"""
+"""Модуль тестировки торговой стратегии с подбором весов к графикам"""
+
+
 import datetime
 from datetime import date
 from itertools import *
@@ -36,17 +38,6 @@ def read_csv_test_():
     return last_signal_table
 
 
-def test_module(data_tb):
-    """Функция для тестирования системы по дням"""
-    xlbook = xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
-    sheet = xlbook.sheets('Портфель')
-    balance_tb = sheet.range('A1').options(pd.DataFrame, expand='table', index=False).value
-    print(balance_tb)
-
-
-def test_module2(data_tb: pd.DataFrame):
-    """Функция для тестирования системы по дням"""
-    data_tb.rolling()
 
 class crt_balans:
     def __init__(self):
