@@ -1,5 +1,6 @@
 # Сортино
 import datetime
+
 import pandas as pd
 import xlwings as xw
 
@@ -12,7 +13,8 @@ pd.options.display.expand_frame_repr = False
 
 client = bs.client
 
-def fun_atr(table_data):
+
+def fun_atr(table_data:pd.DataFrame):
     """Скользящее среднее Валотильности
     Принимает таблицу"""
     Candle_close = table_data["Close"]
@@ -34,7 +36,7 @@ def fun_atr(table_data):
     return atr
 
 
-def fun_sharp_(table_data:pd.DataFrame):
+def fun_sharp_(table_data: pd.DataFrame):
     """Нахождение значения коэф шарпа пока без atr"""
     atr = fun_atr(table_data)  # Нахождение скользящего среднего
     standart_dohodn = 0
@@ -77,7 +79,8 @@ def fun_sortino_(table_data):
     sortino = (srednee_znac_dohodn - Rf) / profitability ** (1 / 2)
     return sortino
 
-def take_data_candle(asset:str, daily_interval,end_day=None):
+
+def take_data_candle(asset: str, daily_interval, end_day=None):
     """
  Функция обработки таблицы для извленения по интервалу и времени параметров свечей.
         1499040000000,      # Open time
@@ -101,11 +104,11 @@ def take_data_candle(asset:str, daily_interval,end_day=None):
     time_delta = time_delta.total_seconds()
     print(bs.current_time, time_delta)
     start_str = bs.current_time['serverTime'] / 1000 - time_delta
-    if end_day==None:#Данное решение необходимо для тестирования системы, при тесте по дням.
+    if end_day == None:  # Данное решение необходимо для тестирования системы, при тесте по дням.
         end_day = bs.current_time['serverTime'] / 1000 - (datetime.timedelta(1)).total_seconds()  # Окончания поиска.
     else:
-        end_day= bs.current_time['serverTime'] / 1000 - (datetime.timedelta(end_day)).total_seconds()
-        start_str = end_day-time_delta
+        end_day = bs.current_time['serverTime'] / 1000 - (datetime.timedelta(end_day)).total_seconds()
+        start_str = end_day - time_delta
 
     print("time", str(start_str))
     print(f"инструмент {asset}")
@@ -188,7 +191,7 @@ def candel_classificator(asset, daily_interval):
     candle['size'] = abs(candle['Open'] - candle['Close'])  # Тело свечи
     candle['relation'] = candle['size'] / candle['Close']  # Отношение цены открытия к цене закрытия
     print(candle)
-    candle['bottomShadow'] =candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
+    candle['bottomShadow'] = candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
     candle['topShadow'] = candle['High'] - candle[["Open", "Close"]].values.max(1)
     candle['atr'] = (fun_atr(candle))  # Для указанной таблицы расчитываем ATR
     candle['candl_mean'] = candle['size'].std(axis=0)
@@ -223,7 +226,7 @@ def ask_input():
         a = int(input("Введите по какой таблице искать по портфелю 1; по рынку 0 ;по готовуму списку 2 "))
     except:
         "Ввели не числовые данные"
-        a=ask_input()
+        a = ask_input()
     if a == 1:
         bs.table_base = bs.table
         return bs.table_base
@@ -241,15 +244,15 @@ def ask_input():
         return ask_input()
 
 
-def insert_excel(table, cell="A1",table_name=None):
+def insert_excel(table, cell="A1", table_name=None):
     """Функция для вставки в excel"""
     try:
         a = int(input(f"Введите нужен ли импорт в excel {str(table_name)} Yes=1 "))
     except:
         return insert_excel(table, cell)
 
-    if table_name!=None:
-        table_name=table_name
+    if table_name != None:
+        table_name = table_name
     else:
         table_name = str(datetime.date.today())
 
@@ -284,10 +287,9 @@ def fun_new_filter(data):
 
 def transfer_data(data_frame):
     """Функция трансфера pandas для yhoofin"""
-    list=data_frame['asset'].values.tolist()
+    list = data_frame['asset'].values.tolist()
     print(list)
     return str(list)
-
 
 
 if __name__ == '__main__':

@@ -106,4 +106,9 @@ for i in (n1,n2):
     print (*i)
 
 print( [1,2,3]*3)
-print("asa",len(0))
+print("asa")
+print("Ответ",5+4+3)
+a=5
+b=4
+c=3
+print( a+b+c)

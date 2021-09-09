@@ -13,6 +13,9 @@ fig = go.Figure()  # Создаем график
 columns = ['asset', 'signal']
 index = [0, 0]
 last_signal = pd.DataFrame(columns=columns, index=[0, 0])  # Пустая таблица для добавления в нее данных
+total_signal=pd.DataFrame(columns=columns, index=[0, 0])# таблица для глобального сигнала
+
+
 
 
 def write_base_csv(asset, table):
@@ -212,6 +215,10 @@ class graf_delta_cls:
                                  mode='lines'))  # Обновление для графиков
         fig.update_layout(title="График_импульса", yaxis_title='singnal')
 
+    def __tota_graf(self, candel_tb, asset):
+        new_table=pd.DataFrame()
+
+
     @classmethod
     def grafics_show(cls):
         # Отображает график
@@ -248,7 +255,7 @@ if __name__ == '__main__':
     table = ask_input()
     # tableable = table[0:2]
     # ВНИМАНИЕ! строкой ниже Биток должен быть всегда первыми иначе фильтр работать не будет
-    base_table = pd.DataFrame({'asset': ['BTC', 'DX-Y.NYB', "GOLD", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
+    base_table = pd.DataFrame({'asset': ['BTC', 'DX-Y.NYB', "GC=F", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
     table: pd.DataFrame = pd.concat([base_table, table], ignore_index=True,
                                     sort=False)  # Добавляем базовые инструменты для сравнения
     table.drop_duplicates(subset=['asset'], inplace=True)  # Удаляем дублирования инструментов
