@@ -74,13 +74,12 @@ print(table)
 
 def coint_info(asset):
     spot_client = client.get_all_coins_info()  # Данные спотового рынка
-    client.get_al
     spot_margin = client.get_margin_account()
     table = pd.concat(spot_client, spot_margin, Ignor_index=True)
     return table
 
 
-def func_2(asset):
+def func_2_olf(asset):
     "Вытаскиваем стоимость по позиции"
     x = asset
     val1, val2 = 0, 0
@@ -92,24 +91,44 @@ def func_2(asset):
     return pd.Series([val1, val2])
 
 
-def fun_1(table):
-    'функция нахождения баланса'
-    table[['USDT', 'BNB']] = table['asset'].apply(func_2)
-    table['USDT'] = table['USDT'] * table['free']
-    table['BNB'] = table['BNB'] * table['free']
-    suum_usdt = table['USDT'].sum()
-    print(suum_usdt, volume_usdt)
-    table['% balance'] = table['USDT'] / (suum_usdt + volume_usdt[1]) * 100
-    table['RUB_cost'] = table['USDT'].apply(lambda x: x * usd_rub)
-    table = table.query('USDT > 1')
-    # table['RUB_cost']=table['BNB'].apply(lambda x: x*bnb_rub)
-    table = table.reset_index(drop=True)
-    print(round(table, 1))
-    print(f"стоимость портфеля в долларах {round(suum_usdt)}$",
-          print(f"активы в долларах {volume_usdt[0].round()}$"))
-    print(f"Суммарно в долларах {round(suum_usdt + volume_usdt[0])}$")
-    print(f"Суммарно в рублях {round((suum_usdt + volume_usdt[0]) * usd_rub)} Р")
-    return table
+
+
+class fun_1:
+    def __init__(self,table):
+        'функция нахождения баланса'
+        table[['USDT', 'BNB']] = table['asset'].apply(self.__fun_2)
+        table['USDT'] = table['USDT'] * table['free']
+        table['BNB'] = table['BNB'] * table['free']
+        self.suum_usdt = table['USDT'].sum()
+        print(self.suum_usdt, volume_usdt)
+        table['% balance'] = table['USDT'] / (self.suum_usdt + volume_usdt[1]) * 100
+        table['RUB_cost'] = table['USDT'].apply(lambda x: x * usd_rub)
+        table = table.query('USDT > 1')
+        # table['RUB_cost']=table['BNB'].apply(lambda x: x*bnb_rub)
+        self.table = table.reset_index(drop=True)
+
+
+
+    def __fun_2(self,asset):
+        "Вытаскиваем стоимость по позиции"
+        x = asset
+        val1, val2 = 0, 0
+        try:
+            val1 = float(client.get_avg_price(symbol=x + 'USDT')["price"])
+        except:
+            val2 = float(client.get_avg_price(symbol=x + 'BNB')["price"])
+            val1 = None
+        return pd.Series([val1, val2])
+
+    def _balance(self):
+        print(round(table, 1))
+        print(f"стоимость портфеля в долларах {round(self.suum_usdt)}$",
+              print(f"активы в долларах {volume_usdt[0].round()}$"))
+        print(f"Суммарно в долларах {round(self.suum_usdt + volume_usdt[0])}$")
+        print(f"Суммарно в рублях {round((self.suum_usdt + volume_usdt[0]) * usd_rub)} Р")
+        balance=pd.DataFrame(index=["Стоимость актива $","Стоимость актива Р","Свободные $"],data=[round(self.suum_usdt),round((self.suum_usdt + volume_usdt[0]) * usd_rub),
+                                                                            volume_usdt[0].round()],columns=["стоимость"])
+        return balance
 
 
 def write_json(data):
@@ -123,11 +142,14 @@ def test_cirkl(table):
     write_json(table_convert)
     while True:
         time.sleep(1)
-        table = fun_1(table)
-        table_a = table.copy()
+        table_in = fun_1(table)
+        table=table_in.table
+        print(table_in._balance())
+        #table_a = table.copy()
 
 
-table = fun_1(table)  # Вызов базовой таблицы
+table = fun_1(table).table # Вызов базовой таблицы
+
 # table=table.append({'asset':"USD",'USDT':volume_usdt[0]},ignore_index=True)
 if __name__ == '__main__':
     test_cirkl(table)

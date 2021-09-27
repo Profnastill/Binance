@@ -85,9 +85,48 @@ async def table_signal(message: types.Message):
     with open(name, 'rb') as photo:
         await bot.send_photo(message.chat.id, photo, caption='Таблица сигнала')
 
-@dp.message_handler(regexp='*')
+
+async def main(data,message):
+    """
+    Функия запуска поиска с указанными параметрами
+    :param data:
+    :param message:
+    :return:
+    """
+    id=message.chat.id
+    print()
+    day = 720
+    print(message.text)
+    message.delete()
+    data=data.upper()
+    start = candle_graf_class.graf_delta_cls(day, data)
+    #start.wk = {0: 0.4, 1: 0.45, 2: 0.15}# Можно изменить веса по желанию
+    start.fun_graf_delta(data)
+    signal_table = candle_graf_class.graf_delta_cls.last_signals()  # значения последних сигналов
+    print("---")
+    print(signal_table)
+    signal_table.reset_index(inplace=True, drop=True)
+    if len(signal_table)>0:
+        signal_table = signal_table.style
+        dfi.export(signal_table, "take_signal.png")
+        with open('take_signal.png', 'rb') as photo:
+            await bot.send_photo(message.chat.id, photo, caption='Значение сигнала')
+    else:
+        await bot.send_message(id,"Инструмент не найден")
+
+
+
+@dp.message_handler()
 async def find_asset_signal(message: types.Message):
-    None
+    #await bot.send_message(message.from_user.id, message.text)
+    """ Отслеживает все команды"""
+    message.text.upper()
+    text_msg=message.text.split()
+    if text_msg[0]=="find" and len(text_msg)>=2:
+        data=text_msg[1]
+        await main(data,message)
+    else:
+        return
 
 
 
@@ -103,23 +142,9 @@ async def process_name(message: types.Message, state:FSMContext):
     await  state.update_data(asset=message.text.upper())
     data= await  state.get_data()
     print ("--",data)
+    message=data['asset']
+    await main(data,message)
     await message.delete()
-    day=720
-    print(message.text)
-
-    start = candle_graf_class.graf_delta_cls(day, data["asset"])
-    start.wk = {0: 0.4, 1: 0.45, 2: 0.15}
-    start.fun_graf_delta(data["asset"])
-    signal_table = candle_graf_class.graf_delta_cls.last_signals()  # значения последних сигналов
-    print("---")
-    print(signal_table)
-    signal_table.reset_index(inplace=True,drop=True)
-    signal_table=signal_table.style
-
-    dfi.export(signal_table,"take_signal.png")
-    with open('take_signal.png', 'rb') as photo:
-        await bot.send_photo(message.chat.id, photo, caption='Значение сигнала')
-
     await state.reset_state(with_data=True)
     await state.finish()# Завершаем состояние
 

@@ -112,3 +112,20 @@ a=5
 b=4
 c=3
 print( a+b+c)
+
+print( 3*3**2)
+
+def fun1():
+    a=fff()
+
+
+
+class fff:
+    def __init__(self):
+        self.a=1
+        print ("jr")
+fff()
+
+
+a="adas"
+print(a.split()[0])

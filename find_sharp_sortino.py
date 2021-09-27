@@ -42,11 +42,11 @@ def fun_sharp_(table_data: pd.DataFrame):
     standart_dohodn = 0
     # umber_of_day = len(table_data)
     Candle_close = table_data["Close"]
-
     # iat
     table_data["Доходность шарп"] = Candle_close.diff() / Candle_close.shift(-1)
     srednee_znac_dohodn = table_data["Доходность шарп"].mean()
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
+    Rf=Rf*len(table_data)
     standart_dev = table_data["Доходность шарп"].std(skipna=True)  # Стандартное отклонение
     # sharp = (srednee_znac_dohodn - Rf) / standart_dev * (52 ** (1 / 2))  # Через стандартное отклонение
     sharp = (srednee_znac_dohodn - Rf) / standart_dev  # Через стандартное отклонение
@@ -59,11 +59,11 @@ def fun_sharp_(table_data: pd.DataFrame):
 
 
 def fun_sortino_(table_data):
-    standart_dohodn = 4
+    standart_dohodn = 0
     # number_of_day = len(table_data)
     # table_data = table_data[(table_data['Close']) > 0]# Сомнительная строка !!!!! Так как доходность и так всегда больше нуля
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
-
+    Rf=Rf*len(table_data)
     Candle_close = table_data["Close"]
     # iat
     table_data["Доходность сортино"] = Candle_close.diff() / Candle_close.shift(-1)  # Нахождение разницы в процентах

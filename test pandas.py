@@ -73,7 +73,6 @@ class new:
 def sfds():
     gf=new()
 
-
 sfds()
 
 class sums:
@@ -100,3 +99,6 @@ for i in [1,3,5]:
     start=test(i)
     start.summ()
 print(start.summ())
+
+df2=df2.append({"ID":4,"col_1":12},ignore_index=True)
+print(df2)

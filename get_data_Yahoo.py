@@ -25,8 +25,8 @@ def yhoo_data_taker(asset, day, end_day=start_day):
     day_set = day_set.rename({'Date': 'Open time'}, axis='columns')
     PATTERN_IN = "%Y-%m-%d"
     # day_set['Open time']=pd.to_datetime(day_set['Open time'].values,format=PATTERN_IN)
-    day_set['Open time'] = day_set['Open time'].apply(lambda x: (x.to_pydatetime()))
-
+    day_set['Open time'] = day_set['Open time'].apply(lambda x: ( x.to_pydatetime()))
+    day_set['Open time'] = day_set['Open time'].apply(lambda x: (x.date()))
     return day_set
 
 
