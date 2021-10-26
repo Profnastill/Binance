@@ -105,7 +105,7 @@ def take_data_candle(asset: str, daily_interval, end_day=None):
     print(bs.current_time, time_delta)
     start_str = bs.current_time['serverTime'] / 1000 - time_delta
     if end_day == None:  # Данное решение необходимо для тестирования системы, при тесте по дням.
-        end_day = bs.current_time['serverTime'] / 1000 - (datetime.timedelta(1)).total_seconds()  # Окончания поиска.
+        end_day = bs.current_time['serverTime'] / 1000 - (datetime.timedelta(0)).total_seconds()  # Окончания поиска.
     else:
         end_day = bs.current_time['serverTime'] / 1000 - (datetime.timedelta(end_day)).total_seconds()
         start_str = end_day - time_delta
@@ -136,7 +136,7 @@ def find_sharp_sortino(asset, daily_interval):
     sharpa = fun_sharp_(table_data)
     sortino = fun_sortino_(table_data)  # Запуск функции пересчета Шарпа
     # atr = fun_atr(table_data)# Значение скольязящего среднего может потом пригодится
-    print(f"Коэффициент {sharpa},Коэффициент Сортино 0{sortino}")
+    #print(f"Коэффициент {sharpa},Коэффициент Сортино 0{sortino}")
     return pd.Series([sharpa, sortino])
 
 
@@ -190,7 +190,7 @@ def candel_classificator(asset, daily_interval):
     candle['scope'] = candle['High'] - candle['Low']  # Размах свечи
     candle['size'] = abs(candle['Open'] - candle['Close'])  # Тело свечи
     candle['relation'] = candle['size'] / candle['Close']  # Отношение цены открытия к цене закрытия
-    print(candle)
+    #print(candle)
     candle['bottomShadow'] = candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
     candle['topShadow'] = candle['High'] - candle[["Open", "Close"]].values.max(1)
     candle['atr'] = (fun_atr(candle))  # Для указанной таблицы расчитываем ATR
@@ -199,14 +199,14 @@ def candel_classificator(asset, daily_interval):
     # print(asset, daily_interval)
     # print(candle)
     candle['volume_mean'] = candle['Volume'].mean(axis=0)  # Раассчитываем для полного выбора 10 дней
-    print("Запуск классификатора", asset)
+    #print("Запуск классификатора", asset)
 
     if len(candle) > 3:  # Если вдруг таблица пустая пришла, не понятно правда почему она пустая может прийти
         select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
 
         time = (select_candle['Open time'][0:1:1].values)
 
-        print("свечи за после \n", select_candle)
+        #print("свечи за после \n", select_candle)
 
         select_candle['type'] = select_candle.apply(candle_type_analiz, axis=1)  # Определяем типы свечей для asset
 
@@ -237,7 +237,7 @@ def ask_input():
         xlbook = xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
         sheet = xlbook.sheets('Портфель')
         bs.table_base = sheet.range('A1').options(pd.DataFrame, expand='table', index=False).value
-        print(bs.table_base)
+        #print(bs.table_base)
         return bs.table_base
 
     else:
@@ -280,7 +280,7 @@ def fun_new_filter(data):
 
             return True
         else:
-            print(data)
+
             a = False
     return a
 
@@ -288,7 +288,6 @@ def fun_new_filter(data):
 def transfer_data(data_frame):
     """Функция трансфера pandas для yhoofin"""
     list = data_frame['asset'].values.tolist()
-    print(list)
     return str(list)
 
 

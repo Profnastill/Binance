@@ -1,6 +1,7 @@
 """Модуль проверки по сигналу на основе скользящего среднего, так же строим графики свечей"""
 import math
 from datetime import date, timedelta
+
 import dataframe_image as dfi
 import numpy as np
 import pandas as pd
@@ -8,7 +9,8 @@ import plotly.graph_objects as go
 
 import get_data_Yahoo
 from find_sharp_sortino import take_data_candle, ask_input, insert_excel, fun_sharp_, fun_sortino_
-range_y=[-1,-0.5,-0.2,0,0.2,0.5,1]
+
+range_y = [-1, -0.5, -0.2, 0, 0.2, 0.5, 1]
 fig = go.Figure()  # Создаем график
 columns = ['asset', 'signal']
 index = [0, 0]
@@ -40,8 +42,8 @@ class data_tb_save_cls:
 
     def table_connect(self, data):
         self.table: pd.DataFrame
-        print("--сигналы по инструментам-")
-        print(data)
+        #  print("--сигналы по инструментам-")
+        #  print(data)
         # self._table=pd.concat(self._table,data,ignore_index=True)
         self.table = self.table.append(data)
         self.table = self.table.reindex()
@@ -52,7 +54,6 @@ class data_tb_save_cls:
             self.counter += 1
             self._total_signal_tb = self._total_signal_tb.append(data)
             self._total_signal_tb = self.table.reindex()
-
 
     def __get_signal_coonector(self):
         """Добавляет на график полный сигнал"""
@@ -74,7 +75,7 @@ class data_tb_save_cls:
         l = len(self.table)
         insert_excel(self.table, "L1")
         insert_excel(self.filter(), f"L{str(l + 4)}")
-        dfi.export(self.table, "signal.png")
+        dfi.export(self.table, "picture/signal.png")
 
     def insert_csv(self):
         """
@@ -139,8 +140,8 @@ class graf_delta_cls:
         self.n = 8
         self.__n1s = [self.n, self.n * 2, self.n * 4]  # Коэффициент количество дней для сколь средней
         self.__n2l = [self.n * 3, self.n * 6, self.n * 12]
-        #self.wk = {0: 0.4, 1: 0.45, 2: 0.15}  # Веса для скользящих средних
-        self.wk ={0: 0.25, 1: 0.4, 2: 0.35}
+        # self.wk = {0: 0.4, 1: 0.45, 2: 0.15}  # Веса для скользящих средних
+        self.wk = {0: 0.25, 1: 0.4, 2: 0.35}
         self.__find_candel_table(asset)  # Функция поиска дневных моделей по имени инструмента
 
     def _ewm_f(self, table, n: int):
@@ -150,31 +151,28 @@ class graf_delta_cls:
         halflife = math.log(0.5) / math.log(1 - 1 / n)
         # ewm=pd.Series.ewm(table['Close'], alpha=n, halflife=halflife).mean()
         # ewm = pd.Series.ewm(table['Close'], alpha=1 / n).mean()
-        ewm = pd.Series.ewm(table['Close'], halflife=halflife).mean()
+        ewm = pd.Series.ewm(table['Close'], halflife=halflife, adjust=False).mean()
         return pd.Series(ewm)
-
-
 
     def __find_candel_table(self, asset: str, day=None):
         """Функция  нахождения данных для свечных моделей"""
-        print(asset)
+        # print(asset)
         candel_tb = take_data_candle(asset, self.__day_interval, day)  # Получаем набор свечей для asset
-        print("-----------\n", candel_tb)
+        # print("-----------\n", candel_tb)
         # Запускаем попытку поиска на YHOO
         # candel_tb['SMA1']= candel_tb.rolling(window=n1).mean()# Скользящая средняя
         if len(candel_tb) < 26:  # Защита если таблица вдруг пустая пришла
             candel_tb = get_data_Yahoo.yhoo_data_taker(asset,
                                                        self.__day_interval)  # Попытка получить набор свечей с Yhoo
-            print(candel_tb[:5])
+            # print(candel_tb[:5])
             if len(candel_tb) < 30:
                 self.__candel_tb = pd.DataFrame()
                 return
-        print(candel_tb["Open time"][-1::].values, self.__tcur_time)
-        print(self.__tcur_time - timedelta(3))
-        if candel_tb["Open time"][-1::].values == np.datetime64(self.__tcur_time - timedelta(
-                3)):  # Отсеиваем элементы для которых по какой то причине данные не сооответствуют тек дню
+        # print(candel_tb["Open time"][-1::].values, self.__tcur_time)
+        # print(self.__tcur_time - timedelta(3))
+        if candel_tb["Open time"][-1::].values == self.__tcur_time:  # Отсеиваем элементы для которых по какой то причине данные не сооответствуют тек дню
             self.__candel_tb = pd.DataFrame()
-            return
+            return self.__candel_tb
         self.__candel_tb = candel_tb
         return self.__candel_tb  # Возвращает таблицу с с данными по свечам
 
@@ -193,9 +191,11 @@ class graf_delta_cls:
             name_1 = str(self.__n1s[i])  # получаем имя для графика
             name_2 = str(self.__n2l[i])
             self.__candel_tb['EWA1-' + name_1] = self._ewm_f(self.__candel_tb,
-                                                             self.__n1s[i])  # Эксопненциальная скользящая средняя №1 быстрая
+                                                             self.__n1s[
+                                                                 i])  # Эксопненциальная скользящая средняя №1 быстрая
             self.__candel_tb['EWA2-' + name_2] = self._ewm_f(self.__candel_tb,
-                                                             self.__n2l[i])  # Эксопненциальная скользящая средняя №2 медленные
+                                                             self.__n2l[
+                                                                 i])  # Эксопненциальная скользящая средняя №2 медленные
             self.__candel_tb['xk'] = self.__candel_tb['EWA1-' + name_1] - self.__candel_tb['EWA2-' + name_2]
             standert_dev_63 = self.__candel_tb['Close'][-63::1].std()  # Стандартное отклонение 63 дня
             self.__candel_tb['yk'] = self.__candel_tb['xk'] / standert_dev_63
@@ -208,16 +208,15 @@ class graf_delta_cls:
             self.__candel_tb['signal'] += wk * self.__candel_tb['uk']  # получения сигнала
             self.__candel_tb['asset'] = asset
             base_candel = pd.concat([base_candel, self.__candel_tb], ignore_index=True)
-        day=30
+        day = 30
         self.base = self.__candel_tb  # База данных
         self.__candel_tb['signal'] = self.__candel_tb['signal'].round(2)
         self.__candel_tb['Удар'] = self.__filter_signal()  # временно отключим
         self.__candel_tb['sharp'] = fun_sharp_(self.__candel_tb[-day::1])
         self.__candel_tb['sortino'] = fun_sortino_(self.__candel_tb[-day::1])
-        #data_save.sum_signal = self.__candel_tb[["Open time", 'signal']], asset
+        # data_save.sum_signal = self.__candel_tb[["Open time", 'signal']], asset
 
         data_save.table_connect(self.__candel_tb[["Open time", 'asset', 'signal', 'Удар', 'sharp', 'sortino']][-1::])
-
 
         self.__graf_show(self.__candel_tb, asset)  # вызыв функции заполнения данных для графика
         # return self.last_signal
@@ -266,7 +265,8 @@ if __name__ == '__main__':
     table = ask_input()
     # tableable = table[0:2]
     # ВНИМАНИЕ! строкой ниже Биток должен быть всегда первыми иначе фильтр работать не будет
-    base_table = pd.DataFrame({'asset': ['BTC', 'DX-Y.NYB', "GC=F", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
+    base_table = pd.DataFrame(
+        {'asset': ["RTSI.ME", 'BTC', 'DX-Y.NYB', "GC=F", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
     table: pd.DataFrame = pd.concat([base_table, table], ignore_index=True,
                                     sort=False)  # Добавляем базовые инструменты для сравнения
     table.drop_duplicates(subset=['asset'], inplace=True)  # Удаляем дублирования инструментов
@@ -276,17 +276,16 @@ if __name__ == '__main__':
     # table = table[0:3]
     for asset in table['asset']:
         start = graf_delta_cls(day, asset)
-        #start.wk = {0: 0.4, 1: 0.45, 2: 0.15}
+        # start.wk = {0: 0.4, 1: 0.45, 2: 0.15}
         start.wk = {0: 0.25, 1: 0.4, 2: 0.35}
         start.fun_graf_delta(asset)
 
     # data_save.sum_signal()  # Добавление общего графика
 
     signal_table = graf_delta_cls.last_signals()  # значения последних сигналов
+
     graf_delta_cls.grafics_show()  # Вывод данных в графики
     data_save.insert_csv_base(signal_table, "all_find_signal")  # Для анализа порфеля
     data_save.insert_csv()  # Обновляет базу по фильтру для investing
     data_save.insert_xls_file()  # вставка данных в excel
     print('END')
-
-
