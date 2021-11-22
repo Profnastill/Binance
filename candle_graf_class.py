@@ -3,9 +3,9 @@ import math
 from datetime import date, timedelta
 
 import dataframe_image as dfi
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 import get_data_Yahoo
 from find_sharp_sortino import take_data_candle, ask_input, insert_excel, fun_sharp_, fun_sortino_
@@ -130,6 +130,7 @@ class graf_delta_cls:
     """
 
     counter = 0  # Счетчик срабатываний
+    fig = make_subplots(rows=2, cols=1)
 
     def __init__(self, day_interval, asset: str = 'BTC'):
         self.__day_interval = day_interval
@@ -151,7 +152,7 @@ class graf_delta_cls:
         halflife = math.log(0.5) / math.log(1 - 1 / n)
         # ewm=pd.Series.ewm(table['Close'], alpha=n, halflife=halflife).mean()
         # ewm = pd.Series.ewm(table['Close'], alpha=1 / n).mean()
-        ewm = pd.Series.ewm(table['Close'], halflife=halflife, adjust=False).mean()
+        ewm = pd.Series.ewm(table['Close'], halflife=halflife, min_periods=n, adjust=False).mean()
         return pd.Series(ewm)
 
     def __find_candel_table(self, asset: str, day=None):
@@ -160,7 +161,6 @@ class graf_delta_cls:
         candel_tb = take_data_candle(asset, self.__day_interval, day)  # Получаем набор свечей для asset
         # print("-----------\n", candel_tb)
         # Запускаем попытку поиска на YHOO
-        # candel_tb['SMA1']= candel_tb.rolling(window=n1).mean()# Скользящая средняя
         if len(candel_tb) < 26:  # Защита если таблица вдруг пустая пришла
             candel_tb = get_data_Yahoo.yhoo_data_taker(asset,
                                                        self.__day_interval)  # Попытка получить набор свечей с Yhoo
@@ -170,7 +170,8 @@ class graf_delta_cls:
                 return
         # print(candel_tb["Open time"][-1::].values, self.__tcur_time)
         # print(self.__tcur_time - timedelta(3))
-        if candel_tb["Open time"][-1::].values == self.__tcur_time:  # Отсеиваем элементы для которых по какой то причине данные не сооответствуют тек дню
+        if candel_tb["Open time"][
+           -1::].values == self.__tcur_time:  # Отсеиваем элементы для которых по какой то причине данные не сооответствуют тек дню
             self.__candel_tb = pd.DataFrame()
             return self.__candel_tb
         self.__candel_tb = candel_tb
@@ -223,15 +224,24 @@ class graf_delta_cls:
 
     def __graf_show(self, candel_tb, asset):
         # данные для отображения графиков
+        # fig = make_subplots(rows=4, cols=1)
+        self.fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset,
+                                      mode='lines'), 1, 1)  # Обновление для графиков
 
-        fig.add_trace(go.Scatter(x=candel_tb['Open time'], y=candel_tb['signal'], name=asset,
-                                 mode='lines'))  # Обновление для графиков
-        fig.update_layout(title="График_импульса", yaxis_title='singnal')
+        self.fig.update_layout(title="График_импульса", yaxis_title='singnal', xaxis_rangeslider_visible=False,
+                               legend_orientation="v")
+
+        self.fig.add_trace(go.Candlestick(x=candel_tb['Open time'], open=candel_tb['Open'], high=candel_tb['High'],
+                                          low=candel_tb['Low'], close=candel_tb['Close'], name=asset), 2,
+                           1)  # Обновление для графиков
+        self.fig.update_xaxes(title="График_цен",row=2,col=1,rangeslider_visible=False)
+
 
     @classmethod
     def grafics_show(cls):
         # Отображает график
-        fig.show()
+
+        cls.fig.show()
 
     @classmethod
     def last_signals(cls):

@@ -76,6 +76,9 @@ async def main(data, message):
     else:
         await bot.send_message(id, "Инструмент не найден")
 
+async def get_help(message):
+    await bot.send_message(message.chat.id,"BOT COMMAND HELP \n table_all= Поиск по портфель \n table_all1 =Поиск по Портфель2 \n find tiker= поиск по названию инструмента")
+
 
 async def main_get_table(message, portfel):
     """
@@ -132,6 +135,8 @@ async def find_asset_signal(message: types.Message):
         await main_get_table(message, 'Портфель')
     elif text_msg[0].upper() == "TABLE_ALL1":
         await main_get_table(message, 'Портфель2')
+    elif text_msg[0].upper() == "HELP":
+        await get_help(message)
     else:
         return
 

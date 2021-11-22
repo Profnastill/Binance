@@ -14,7 +14,7 @@ pd.options.display.expand_frame_repr = False
 client = bs.client
 
 
-def fun_atr(table_data:pd.DataFrame):
+def fun_atr(table_data: pd.DataFrame):
     """Скользящее среднее Валотильности
     Принимает таблицу"""
     Candle_close = table_data["Close"]
@@ -46,7 +46,7 @@ def fun_sharp_(table_data: pd.DataFrame):
     table_data["Доходность шарп"] = Candle_close.diff() / Candle_close.shift(-1)
     srednee_znac_dohodn = table_data["Доходность шарп"].mean()
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
-    Rf=Rf*len(table_data)
+    Rf = Rf * len(table_data)
     standart_dev = table_data["Доходность шарп"].std(skipna=True)  # Стандартное отклонение
     # sharp = (srednee_znac_dohodn - Rf) / standart_dev * (52 ** (1 / 2))  # Через стандартное отклонение
     sharp = (srednee_znac_dohodn - Rf) / standart_dev  # Через стандартное отклонение
@@ -63,7 +63,7 @@ def fun_sortino_(table_data):
     # number_of_day = len(table_data)
     # table_data = table_data[(table_data['Close']) > 0]# Сомнительная строка !!!!! Так как доходность и так всегда больше нуля
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
-    Rf=Rf*len(table_data)
+    Rf = Rf * len(table_data)
     Candle_close = table_data["Close"]
     # iat
     table_data["Доходность сортино"] = Candle_close.diff() / Candle_close.shift(-1)  # Нахождение разницы в процентах
@@ -136,7 +136,7 @@ def find_sharp_sortino(asset, daily_interval):
     sharpa = fun_sharp_(table_data)
     sortino = fun_sortino_(table_data)  # Запуск функции пересчета Шарпа
     # atr = fun_atr(table_data)# Значение скольязящего среднего может потом пригодится
-    #print(f"Коэффициент {sharpa},Коэффициент Сортино 0{sortino}")
+    # print(f"Коэффициент {sharpa},Коэффициент Сортино 0{sortino}")
     return pd.Series([sharpa, sortino])
 
 
@@ -190,7 +190,7 @@ def candel_classificator(asset, daily_interval):
     candle['scope'] = candle['High'] - candle['Low']  # Размах свечи
     candle['size'] = abs(candle['Open'] - candle['Close'])  # Тело свечи
     candle['relation'] = candle['size'] / candle['Close']  # Отношение цены открытия к цене закрытия
-    #print(candle)
+    # print(candle)
     candle['bottomShadow'] = candle[["Open", "Close"]].values.min(1) - candle['Low']  # Нижняя тень  размер
     candle['topShadow'] = candle['High'] - candle[["Open", "Close"]].values.max(1)
     candle['atr'] = (fun_atr(candle))  # Для указанной таблицы расчитываем ATR
@@ -199,14 +199,14 @@ def candel_classificator(asset, daily_interval):
     # print(asset, daily_interval)
     # print(candle)
     candle['volume_mean'] = candle['Volume'].mean(axis=0)  # Раассчитываем для полного выбора 10 дней
-    #print("Запуск классификатора", asset)
+    # print("Запуск классификатора", asset)
 
     if len(candle) > 3:  # Если вдруг таблица пустая пришла, не понятно правда почему она пустая может прийти
         select_candle = candle[-3::1]  # Выбрали свечи за последние три дня
 
         time = (select_candle['Open time'][0:1:1].values)
 
-        #print("свечи за после \n", select_candle)
+        # print("свечи за после \n", select_candle)
 
         select_candle['type'] = select_candle.apply(candle_type_analiz, axis=1)  # Определяем типы свечей для asset
 
@@ -237,7 +237,7 @@ def ask_input():
         xlbook = xw.Book(r"C:\Users\Давид\PycharmProjects\Binance\data_book.xlsx")
         sheet = xlbook.sheets('Портфель')
         bs.table_base = sheet.range('A1').options(pd.DataFrame, expand='table', index=False).value
-        #print(bs.table_base)
+        # print(bs.table_base)
         return bs.table_base
 
     else:

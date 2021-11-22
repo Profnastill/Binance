@@ -116,3 +116,38 @@ print(fd)
 print(df)
 fdf = df.where(df.loc[:, 'one'] > 10).dropna()
 print(fdf)
+
+
+class test:
+    table=[]
+    def __init__(self,count):
+        self.a=count
+
+    def changer(self):
+        self.a+=1
+        self.table=self.table.append(self.a)
+
+class test2:
+    table=pd.DataFrame({0:[0]})
+    def __init__(self,count):
+        self.a=count
+
+    def changer(self):
+        self.a+=1
+      #  self.table=self.table.append({self.a:self.a},ignore_index=True)
+        bt1=pd.DataFrame( data=[self.a], columns=[self.a])
+        print(bt1)
+
+        self.table[self.a]=self.a
+
+
+
+for i in [1,2,3]:
+    i=test(i)
+    i.changer()
+print(test.table)
+
+for i in [5,6,7]:
+    i=test2(i)
+    i.changer()
+print(test2.table)
