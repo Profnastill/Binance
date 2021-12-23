@@ -229,13 +229,17 @@ class graf_delta_cls:
                                       mode='lines'), 1, 1)  # Обновление для графиков
 
         self.fig.update_layout(title="График_импульса", yaxis_title='singnal', xaxis_rangeslider_visible=False,
-                               legend_orientation="v")
+                               legend_orientation="v", xaxis_zerolinecolor='black', xaxis_gridcolor='black',
+                               yaxis_zerolinecolor='black', yaxis_gridcolor='black'
+                               )
 
         self.fig.add_trace(go.Candlestick(x=candel_tb['Open time'], open=candel_tb['Open'], high=candel_tb['High'],
                                           low=candel_tb['Low'], close=candel_tb['Close'], name=asset), 2,
                            1)  # Обновление для графиков
-        self.fig.update_xaxes(title="График_цен",row=2,col=1,rangeslider_visible=False)
-
+        self.fig.update_xaxes(title="Время", row=2, col=1, rangeslider_visible=False, zerolinecolor='black',
+                              gridcolor='black')
+        self.fig.update_yaxes(title="График_цен", row=2, col=1, zerolinecolor='black',
+                              gridcolor='black')
 
     @classmethod
     def grafics_show(cls):
@@ -276,7 +280,7 @@ if __name__ == '__main__':
     # tableable = table[0:2]
     # ВНИМАНИЕ! строкой ниже Биток должен быть всегда первыми иначе фильтр работать не будет
     base_table = pd.DataFrame(
-        {'asset': ["RTSI.ME", 'BTC', 'DX-Y.NYB', "GC=F", 'BZ=F', 'RUB=X']})  # добавляем базовые значения
+        {'asset': ["RTSI.ME", 'BTC', 'DX-Y.NYB', "GC=F", 'BZ=F', 'RUB=X','RTSI.ME']})  # добавляем базовые значения
     table: pd.DataFrame = pd.concat([base_table, table], ignore_index=True,
                                     sort=False)  # Добавляем базовые инструменты для сравнения
     table.drop_duplicates(subset=['asset'], inplace=True)  # Удаляем дублирования инструментов
@@ -288,6 +292,7 @@ if __name__ == '__main__':
         start = graf_delta_cls(day, asset)
         # start.wk = {0: 0.4, 1: 0.45, 2: 0.15}
         start.wk = {0: 0.25, 1: 0.4, 2: 0.35}
+        start.wk = {0: 0.6, 1: 0.15, 2: 0.25}
         start.fun_graf_delta(asset)
 
     # data_save.sum_signal()  # Добавление общего графика

@@ -1,5 +1,6 @@
 import random
 from binance import client
+from numpy import arange
 client.Client
 import pandas as pd
 
@@ -129,3 +130,9 @@ fff()
 
 a="adas"
 print(a.split()[0])
+
+
+print(arange(-0.5,1,0.1))
+
+for x in [0.7*10]:
+    print(x)

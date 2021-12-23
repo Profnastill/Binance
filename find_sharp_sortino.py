@@ -43,7 +43,7 @@ def fun_sharp_(table_data: pd.DataFrame):
     # umber_of_day = len(table_data)
     Candle_close = table_data["Close"]
     # iat
-    table_data["Доходность шарп"] = Candle_close.diff() / Candle_close.shift(-1)
+    table_data["Доходность шарп"] = (Candle_close.diff() / Candle_close.shift(1)-1)*100
     srednee_znac_dohodn = table_data["Доходность шарп"].mean()
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
     Rf = Rf * len(table_data)
@@ -59,24 +59,20 @@ def fun_sharp_(table_data: pd.DataFrame):
 
 
 def fun_sortino_(table_data):
-    standart_dohodn = 0
-    # number_of_day = len(table_data)
-    # table_data = table_data[(table_data['Close']) > 0]# Сомнительная строка !!!!! Так как доходность и так всегда больше нуля
+    standart_dohodn=4.5
     Rf = standart_dohodn / 365  # доходность дневная без рисковая
-    Rf = Rf * len(table_data)
     Candle_close = table_data["Close"]
-    # iat
-    table_data["Доходность сортино"] = Candle_close.diff() / Candle_close.shift(-1)  # Нахождение разницы в процентах
-    srednee_znac_dohodn = table_data["Доходность сортино"].mean()
 
-    # standart_dev = table_data["Доходность сортино"].std()  # Стандартное отклонение
+    table_data["%Отношение"] = (Candle_close / Candle_close.shift(1) - 1) * 100  # Нахождение разницы в процентах
 
-    difference = (Rf - table_data[
-        "Доходность сортино"]) ** 2  # Для знаменателя разность стандартной доходности и реальной возведенна в квадра
+    srednee_znac_dohodn = table_data["%Отношение"].mean()
 
-    # print(table_data)
-    profitability = difference.mean()  # Среднеее значение по разности доходности для знаменателя
-    sortino = (srednee_znac_dohodn - Rf) / profitability ** (1 / 2)
+    table_data["Знаменатель"] = (Rf - table_data[table_data["%Отношение"] > Rf][
+        "%Отношение"]) ** 2  # Для знаменателя разность стандартной доходности и реальной возведенна в квадра
+
+    profitability = table_data["Знаменатель"].sum() / len(
+        Candle_close)  # Среднеее значение по разности доходности для знаменателя
+    sortino = (srednee_znac_dohodn - Rf) / (profitability ** (1 / 2))
     return sortino
 
 
